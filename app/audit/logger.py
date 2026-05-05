@@ -29,11 +29,22 @@ def get_audit_logger() -> logging.Logger:
     logger.setLevel(logging.INFO)
     logger.propagate = False
 
-    if logger.handlers:
-        current_path = getattr(logger.handlers[0], "baseFilename", None)
-        if current_path == resolved_log_path:
-            return logger
-        for handler in list(logger.handlers):
+    existing_handler = next(
+        (
+            handler
+            for handler in logger.handlers
+            if isinstance(handler, RotatingFileHandler)
+            and getattr(handler, "baseFilename", None) == resolved_log_path
+        ),
+        None,
+    )
+    if existing_handler is not None:
+        return logger
+
+    # Удаляем только handlers, созданные этим модулем ранее. Чужие handlers,
+    # добавленные pytest, IDE или внешней системой логирования, не трогаем.
+    for handler in list(logger.handlers):
+        if getattr(handler, "_energy_system_audit_handler", False):
             logger.removeHandler(handler)
             handler.close()
 
@@ -43,6 +54,7 @@ def get_audit_logger() -> logging.Logger:
         backupCount=settings.audit_log_backup_count,
         encoding="utf-8",
     )
+    handler._energy_system_audit_handler = True  # type: ignore[attr-defined]
     handler.setFormatter(logging.Formatter("%(message)s"))
     logger.addHandler(handler)
     return logger

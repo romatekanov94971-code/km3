@@ -26,3 +26,19 @@
 PYTHONPATH=. pytest -q
 # 30 passed
 ```
+
+
+## Оставшиеся замечания после v3
+
+| Замечание | Исправление |
+|---|---|
+| `get_audit_logger()` проверял только `handlers[0]` | Теперь ищется подходящий `RotatingFileHandler` по `baseFilename`, чужие handlers не удаляются; удаляются только handlers, помеченные `_energy_system_audit_handler`. |
+| `lifespan` вызывал `get_auth_service()` напрямую | В `lifespan` используется явный `AuthService().ensure_default_admin()`, без имитации DI-контекста. |
+| `__all__` в `app/auth/service.py` экспортировал приватные helpers | Теперь публичный экспорт модуля: `__all__ = ["AuthService"]`. |
+
+## Проверка после финальных мелких правок
+
+```bash
+PYTHONPATH=. pytest -q
+# 33 passed
+```

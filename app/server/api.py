@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse
 from app.audit.logger import audit_event
 from app.common.exceptions import EnergySystemError
 from app.server.config import ensure_runtime_dirs, get_settings
-from app.server.dependencies import get_auth_service, rate_limit
+from app.auth.service import AuthService
+from app.server.dependencies import rate_limit
 from app.server.routes import auth, calc
 from app.storage.database import init_db
 
@@ -20,7 +21,7 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     ensure_runtime_dirs()
     init_db()
-    get_auth_service().ensure_default_admin()
+    AuthService().ensure_default_admin()
     audit_event("api_started", "api", "system", subject="system")
     yield
 

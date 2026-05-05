@@ -111,7 +111,7 @@
 
 ```bash
 PYTHONPATH=. pytest -q
-# 30 passed
+# 33 passed
 ```
 
 
@@ -147,3 +147,12 @@ PYTHONPATH=. pytest -q
 | Заменить deprecated `on_event("startup")` на `lifespan` | ✅ |
 | Не показывать серверный путь CSV/PPTX в GUI | ✅ |
 | Добавить `pyproject.toml` | ✅ |
+
+
+## Финальные замечания после v3
+
+| Замечание | Статус |
+|---|---:|
+| Хрупкая проверка `первого handler в logger.handlers` | ✅ |
+| Прямой вызов `get_auth_service()` в `lifespan` | ✅ |
+| Приватные helpers в `__all__` модуля `auth.service` | ✅ |

@@ -94,7 +94,7 @@ python main.py gui
 PYTHONPATH=. pytest -q
 ```
 
-Ожидаемый результат: `30 passed`
+Ожидаемый результат: `33 passed`
 
 ## Переменные окружения
 
@@ -228,3 +228,15 @@ docs/presentation/         # архитектура в PPTX
 - deprecated `@app.on_event("startup")` заменен на FastAPI `lifespan`;
 - GUI больше не показывает серверный путь CSV/PPTX;
 - добавлен `pyproject.toml` для pytest.
+
+
+## Финальные мелкие исправления после v3
+
+Закрыты последние замечания:
+
+- `get_audit_logger()` больше не зависит от `первого handler в logger.handlers`;
+- `lifespan` явно вызывает `AuthService().ensure_default_admin()`;
+- `app/auth/service.py` экспортирует только публичный `AuthService`;
+- добавлен `tests/test_remaining_issues.py`.
+
+Проверка: `33 passed`.
