@@ -26,7 +26,7 @@ class SessionManager:
 
     def create_session(self, user: AuthenticatedUser) -> str:
         with self._lock:
-            self.cleanup()
+            self._cleanup_unsafe()
             token = secrets.token_urlsafe(32)
             expires_at = (utcnow() + self.ttl).timestamp()
             self._sessions[token] = Session(token=token, user=user, expires_at=expires_at)
@@ -36,7 +36,7 @@ class SessionManager:
         if not token:
             return None
         with self._lock:
-            self.cleanup()
+            self._cleanup_unsafe()
             session = self._sessions.get(token)
             if not session:
                 return None
@@ -49,12 +49,18 @@ class SessionManager:
             self._sessions.pop(token, None)
 
     def cleanup(self) -> None:
-        # Вызывается как снаружи, так и из методов под RLock.
+        """Публичный потокобезопасный метод очистки истекших сессий."""
         with self._lock:
-            now_ts = utcnow().timestamp()
-            expired = [token for token, session in self._sessions.items() if session.expires_at < now_ts]
-            for token in expired:
-                self._sessions.pop(token, None)
+            self._cleanup_unsafe()
+
+    def _cleanup_unsafe(self) -> None:
+        """Внутренний метод. Вызывается только при уже удерживаемом self._lock."""
+        now_ts = utcnow().timestamp()
+        expired = [token for token, session in self._sessions.items() if session.expires_at < now_ts]
+        for token in expired:
+            self._sessions.pop(token, None)
 
 
 session_manager = SessionManager()
+
+__all__ = ["Session", "SessionManager", "session_manager"]

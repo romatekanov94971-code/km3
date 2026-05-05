@@ -1,0 +1,29 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.75"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", color="#555555", fontname="DejaVu Sans", fontsize=12];
+  edge [color="#555555", fontname="DejaVu Sans", fontsize=10];
+  GUI [label="PyQt6 GUI\nno server path in export message"];
+  API [label="FastAPI App\nlifespan startup"];
+  DEP [label="Dependencies\nDI + per-process rate limit"];
+  DTO [label="CalculationRequest DTO"];
+  MAP [label="Mapper\nDTO -> CalculationInput"];
+  AUTH [label="AuthService\nper-request"];
+  SESSION [label="SessionManager\nRLock + _cleanup_unsafe"];
+  CALC [label="Math Core\nCalculationInput"];
+  AUD [label="AuditLogger\nAuditEvent + replace()"];
+  LOG [label="logging.getLogger cache\nno global _LOGGER"];
+  DB [label="SQLite", shape=cylinder, fillcolor="#ffffff"];
+  GUI -> API;
+  API -> DEP;
+  DEP -> AUTH;
+  AUTH -> SESSION;
+  API -> DTO;
+  DTO -> MAP;
+  MAP -> CALC;
+  API -> AUD;
+  AUD -> LOG;
+  AUTH -> DB;
+  CALC -> DB;
+  AUD -> DB;
+}

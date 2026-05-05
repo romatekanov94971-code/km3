@@ -31,3 +31,6 @@ def send_audit_event_remote(event: dict[str, Any]) -> bool:
             return 200 <= response.status < 300
     except (urllib.error.URLError, TimeoutError, OSError):
         return False
+
+
+__all__ = ['send_audit_event_remote']

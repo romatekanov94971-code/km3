@@ -7,94 +7,82 @@ package "Клиентская часть PyQt6" {
   [LoginWindow] as LoginWindow
   [MainWindow] as MainWindow
   [AuditWindow] as AuditWindow
-  [CreateUserWindow] as CreateUserWindow
-  [ChangeRoleWindow] as ChangeRoleWindow
-  [SecuritySettingsWindow] as SecuritySettingsWindow
   [ApiClient] as ApiClient
 }
 
 package "Сервер FastAPI" {
+  [FastAPI App\nlifespan startup] as API
   [Auth Routes] as AuthRoutes
   [Calc Routes] as CalcRoutes
-  [Rate Limit] as RateLimit
-  [HTTPS Config] as HTTPS
+  [Dependencies] as Dependencies
+  [Rate Limit\nin-memory per-process] as RateLimit
+  [CalculationRequest DTO] as CalcDTO
+  [Server Mapper] as Mapper
 }
 
-package "Аутентификация и авторизация" {
+package "Аутентификация" {
   [AuthService] as AuthService
   [PasswordPolicy] as PasswordPolicy
-  [SessionManager] as SessionManager
+  [SessionManager\nRLock + _cleanup_unsafe] as SessionManager
+  [Initial Admin\nENV or generated file] as InitialAdmin
 }
 
 package "Вычисления" {
+  [CalculationInput\nDomain Model] as CalcInput
   [Calculation Orchestrator] as Orchestrator
   [Math Core] as Core
+  [Constants] as Constants
   [Formulas] as Formulas
   [Optimization] as Optimization
-  [Validators] as Validators
 }
 
 package "Хранение" {
-  [UserRepository] as UserRepo
-  [CalculationRepository] as CalcRepo
-  [AuditRepository] as AuditRepo
+  [Repositories] as Repos
   database "SQLite" as DB
 }
 
-package "Аудит и логирование" {
-  [AuditLogger] as AuditLogger
-  [Retention / Cleanup] as Retention
-  [RotatingFileHandler] as Rotation
+package "Аудит" {
+  [AuditEvent] as AuditEvent
+  [AuditLogger\nlogging.getLogger cache] as AuditLogger
+  [Retention / Rotation] as AuditStorage
   [Remote Audit Sender] as RemoteAudit
 }
 
-package "Отчетность" {
-  [Charts] as Charts
-  [CSV Export] as CSV
-  [PPTX Export] as PPTX
-}
-
-User --> MainWindow
-Admin --> MainWindow
-MainWindow --> ApiClient
+User --> LoginWindow
+Admin --> LoginWindow
 LoginWindow --> ApiClient
+MainWindow --> ApiClient
 AuditWindow --> ApiClient
-CreateUserWindow --> ApiClient
-ChangeRoleWindow --> ApiClient
-SecuritySettingsWindow --> ApiClient
 
-ApiClient --> AuthRoutes : HTTP/JSON or HTTPS/JSON :8000
-ApiClient --> CalcRoutes : HTTP/JSON or HTTPS/JSON :8000
+ApiClient --> AuthRoutes : HTTP(S)/JSON :8000
+ApiClient --> CalcRoutes : HTTP(S)/JSON :8000
 
+API --> Dependencies
+API --> AuthRoutes
+API --> CalcRoutes
+API --> AuditLogger
+
+Dependencies --> AuthService : Depends(get_auth_service)
+Dependencies --> RateLimit
 AuthRoutes --> AuthService
-AuthRoutes --> RateLimit
-CalcRoutes --> RateLimit
-AuthRoutes --> HTTPS
-CalcRoutes --> HTTPS
-
 AuthService --> PasswordPolicy
 AuthService --> SessionManager
-AuthService --> UserRepo
+AuthService --> InitialAdmin
+AuthService --> Repos
 
+CalcRoutes --> CalcDTO
+CalcDTO --> Mapper
+Mapper --> CalcInput
 CalcRoutes --> Orchestrator
 Orchestrator --> Core
 Orchestrator --> Optimization
+Core --> Constants
 Core --> Formulas
-Core --> Validators
+Optimization --> Core
 
-UserRepo --> DB
-CalcRepo --> DB
-AuditRepo --> DB
-CalcRoutes --> CalcRepo
-
-AuthRoutes --> AuditLogger
-CalcRoutes --> AuditLogger
-AuditLogger --> AuditRepo
-AuditLogger --> Rotation
-AuditLogger --> Retention
+Repos --> DB
+AuditLogger --> AuditEvent
+AuditLogger --> Repos
+AuditLogger --> AuditStorage
 AuditLogger --> RemoteAudit
-
-CalcRoutes --> CSV
-CalcRoutes --> PPTX
-MainWindow --> Charts
 @enduml

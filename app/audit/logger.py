@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import secrets
+from dataclasses import replace
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
@@ -11,29 +12,39 @@ from app.audit.event_models import AuditEvent
 from app.common.utils import safe_headers
 from app.server.config import get_settings
 
-_LOGGER: logging.Logger | None = None
-
 
 def get_audit_logger() -> logging.Logger:
-    global _LOGGER
-    if _LOGGER is not None:
-        return _LOGGER
+    """Возвращает именованный logger без отдельного глобального singleton.
+
+    logging.getLogger(name) сам кэширует объект logger по имени. Если в тестах
+    или при смене конфигурации путь журнала меняется, старый handler закрывается
+    и заменяется новым.
+    """
     settings = get_settings()
     log_path = Path(settings.audit_log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_log_path = str(log_path.resolve())
+
     logger = logging.getLogger("energy_system.audit")
     logger.setLevel(logging.INFO)
     logger.propagate = False
-    if not logger.handlers:
-        handler = RotatingFileHandler(
-            log_path,
-            maxBytes=settings.audit_log_max_bytes,
-            backupCount=settings.audit_log_backup_count,
-            encoding="utf-8",
-        )
-        handler.setFormatter(logging.Formatter("%(message)s"))
-        logger.addHandler(handler)
-    _LOGGER = logger
+
+    if logger.handlers:
+        current_path = getattr(logger.handlers[0], "baseFilename", None)
+        if current_path == resolved_log_path:
+            return logger
+        for handler in list(logger.handlers):
+            logger.removeHandler(handler)
+            handler.close()
+
+    handler = RotatingFileHandler(
+        log_path,
+        maxBytes=settings.audit_log_max_bytes,
+        backupCount=settings.audit_log_backup_count,
+        encoding="utf-8",
+    )
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    logger.addHandler(handler)
     return logger
 
 
@@ -83,18 +94,7 @@ def audit_event(
     except Exception:
         remote_sent = False
 
-    event = AuditEvent(
-        event_name=event.event_name,
-        component=event.component,
-        event_type=event.event_type,
-        event_id=event.event_id,
-        event_time=event.event_time,
-        subject=event.subject,
-        headers=event.headers,
-        details=event.details,
-        detail_level=event.detail_level,
-        remote_sent=remote_sent,
-    )
+    event = replace(event, remote_sent=remote_sent)
     data = event.to_dict()
 
     get_audit_logger().info(json.dumps(data, ensure_ascii=False))
@@ -113,3 +113,6 @@ def audit_event(
         # В момент первичной инициализации БД таблицы могут еще отсутствовать.
         pass
     return event_id
+
+
+__all__ = ["audit_event", "get_audit_logger"]

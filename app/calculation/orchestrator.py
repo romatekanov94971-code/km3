@@ -25,3 +25,6 @@ def run_full_calculation(data: CalculationInput) -> FullCalculationResult:
         optimal_blocks=optimal_blocks,
         condenser_vacuum_optimization=vacuum_optimization,
     )
+
+
+__all__ = ['run_full_calculation']

@@ -3,32 +3,28 @@ actor "Пользователь" as User
 participant "LoginWindow" as LoginWindow
 participant "ApiClient" as ApiClient
 participant "/auth/login" as AuthRoute
+participant "Depends(get_auth_service)" as DI
 participant "AuthService" as AuthService
 participant "UserRepository" as UserRepo
-participant "SessionManager" as SessionManager
-participant "AuditLogger" as AuditLogger
+participant "SessionManager\nRLock" as SessionManager
+participant "AuditLogger\nAuditEvent" as AuditLogger
 
-User -> LoginWindow : ввод логина и пароля
+User -> LoginWindow : вводит логин и пароль
 LoginWindow -> ApiClient : login(username, password)
 ApiClient -> AuthRoute : POST /auth/login
+AuthRoute -> DI : get_auth_service()
+DI --> AuthRoute : AuthService
 AuthRoute -> AuthService : login()
 AuthService -> UserRepo : get_by_username()
 UserRepo --> AuthService : UserRecord
-
-alt неверный логин/пароль
-  AuthService -> UserRepo : set_failed_attempts()
-  AuthService -> AuditLogger : login_failed
-  AuthService --> AuthRoute : error
-else 3 ошибки
-  AuthService -> UserRepo : locked_until = now + 15 min
-  AuthService -> AuditLogger : login_failed
-else успех
-  AuthService -> UserRepo : reset_failed_attempts()
+alt успех
   AuthService -> SessionManager : create_session()
+  SessionManager -> SessionManager : _cleanup_unsafe()
   SessionManager --> AuthService : token
-  AuthService -> AuditLogger : login_success
-  AuthService --> AuthRoute : LoginResult
+  AuthService -> AuditLogger : AuditEvent(login_success)
+else ошибка
+  AuthService -> AuditLogger : AuditEvent(login_failed)
 end
-AuthRoute --> ApiClient : HTTP response
-ApiClient --> LoginWindow : result/error
+AuthRoute --> ApiClient : JSON / error
+ApiClient --> LoginWindow : result
 @enduml

@@ -52,3 +52,6 @@ def export_full_result_to_pptx(result: FullCalculationResult, directory: str | P
 
     prs.save(path)
     return path
+
+
+__all__ = ['export_full_result_to_pptx']

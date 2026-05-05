@@ -20,3 +20,6 @@ class LoginResult:
     user: AuthenticatedUser
     session_token: str
     must_change_password: bool
+
+
+__all__ = ['AuthenticatedUser', 'LoginResult']

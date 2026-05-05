@@ -222,3 +222,6 @@ class AuthService:
         self.users.update_password(record.id, hash_password(new_password), must_change_password=False)
         audit_event(event_name="password_changed", component="auth", event_type="auth", subject=user.username)
 
+
+
+__all__ = ['AuthService', 'hash_password', 'to_authenticated_user', 'verify_password']

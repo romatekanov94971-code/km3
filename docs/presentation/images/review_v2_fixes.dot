@@ -1,0 +1,21 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  Review [label="review v2.pdf"];
+  Cleanup [label="cleanup() / _cleanup_unsafe()"];
+  Replace [label="dataclasses.replace(AuditEvent)"];
+  Logger [label="no global _LOGGER"];
+  Lifespan [label="FastAPI lifespan"];
+  Mapper [label="server/mappers.py"];
+  Export [label="GUI: filename only"];
+  All [label="__all__ + pyproject.toml"];
+  Review -> Cleanup;
+  Review -> Replace;
+  Review -> Logger;
+  Review -> Lifespan;
+  Review -> Mapper;
+  Review -> Export;
+  Review -> All;
+}

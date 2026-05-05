@@ -1,0 +1,22 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  UI [label="LoginWindow\npassword blank"];
+  AC [label="ApiClient"];
+  ROUTE [label="/auth/login"];
+  DI [label="Depends(get_auth_service)"];
+  AS [label="AuthService"];
+  UR [label="UserRepository"];
+  SM [label="SessionManager\nRLock"];
+  AUD [label="AuditLogger\nAuditEvent"];
+  UI -> AC [label="login/password"];
+  AC -> ROUTE [label="POST"];
+  ROUTE -> DI [label="resolve service"];
+  DI -> AS [label="AuthService"];
+  AS -> UR [label="user lookup"];
+  AS -> SM [label="create token"];
+  AS -> AUD [label="login_success/login_failed"];
+  ROUTE -> AC [label="JSON response"];
+}

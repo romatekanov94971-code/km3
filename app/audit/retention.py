@@ -12,3 +12,6 @@ def cleanup_old_audit_events(retention_days: int | None = None) -> int:
     days = retention_days if retention_days is not None else get_settings().audit_retention_days
     cutoff = (utcnow() - timedelta(days=days)).isoformat()
     return AuditRepository().delete_older_than(cutoff)
+
+
+__all__ = ['cleanup_old_audit_events']

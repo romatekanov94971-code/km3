@@ -96,3 +96,6 @@ def condenser_vacuum_correction(
     """
     deviation = vacuum_kpa - optimal_vacuum_kpa
     return max(MIN_CONDENSER_VACUUM_FACTOR, 1 - CONDENSER_VACUUM_QUADRATIC_LOSS * deviation**2)
+
+
+__all__ = ['temp_correction', 'humidity_correction', 'wind_speed_correction', 'wind_direction_correction', 'load_correction', 'heat_removal_factor', 'condenser_vacuum_correction']

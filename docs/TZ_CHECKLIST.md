@@ -111,7 +111,7 @@
 
 ```bash
 PYTHONPATH=. pytest -q
-# 18 passed
+# 30 passed
 ```
 
 
@@ -126,3 +126,24 @@ PYTHONPATH=. pytest -q
 | `SessionManager` не потокобезопасен | ✅ | Добавлен `threading.RLock`. |
 | Магические числа | ✅ | Вынесены в `app/calculation/constants.py`. |
 | Глобальный `auth_service` | ✅ | Удален; используется FastAPI DI `Depends(get_auth_service)`. |
+
+
+## Синхронизация UML/презентации после security-refactor
+
+✅ UML и презентация обновлены после удаления глобального `auth_service`, внедрения `Depends(get_auth_service)`, добавления `AuditEvent`, потокобезопасного `SessionManager`, вынесения констант и генерации первичного пароля администратора.
+
+
+## Исправления review v2
+
+| Замечание | Статус |
+|---|---:|
+| Разделить `cleanup()` и `_cleanup_unsafe()` | ✅ |
+| Использовать `dataclasses.replace()` для `AuditEvent.remote_sent` | ✅ |
+| Уточнить комментарий `get_auth_service()` | ✅ |
+| Убрать `global _LOGGER` | ✅ |
+| Добавить `__all__` | ✅ |
+| Вынести маппинг `CalculationRequest -> CalculationInput` из Pydantic-модели | ✅ |
+| Добавить комментарий про per-process rate limit | ✅ |
+| Заменить deprecated `on_event("startup")` на `lifespan` | ✅ |
+| Не показывать серверный путь CSV/PPTX в GUI | ✅ |
+| Добавить `pyproject.toml` | ✅ |

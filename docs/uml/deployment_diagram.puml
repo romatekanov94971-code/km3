@@ -5,15 +5,17 @@ node "Рабочая станция пользователя" {
 
 node "Сервер приложения" {
   artifact "FastAPI API\nport 8000"
-  artifact "Auth / Calculation / Audit / Reporting"
+  artifact "AuthService через Depends"
+  artifact "Math Core / Orchestrator"
+  artifact "AuditLogger + AuditEvent"
 }
 
 database "SQLite\nusers\ncalculation_history\naudit_events" as SQLite
-folder "logs/\nexports/" as Files
+folder "Файловая система\nlogs/\nexports/\ndata/initial_admin_credentials.txt" as Files
 cloud "Удаленный сервер\nсбора аудита" as RemoteAudit
 
-"PyQt6 GUI" --> "FastAPI API\nport 8000" : HTTP/JSON
+"PyQt6 GUI" --> "FastAPI API\nport 8000" : HTTP/JSON локально\nHTTPS/JSON для сети
 "FastAPI API\nport 8000" --> SQLite
-"Auth / Calculation / Audit / Reporting" --> Files
-"Auth / Calculation / Audit / Reporting" --> RemoteAudit : optional POST JSON
+"FastAPI API\nport 8000" --> Files : audit.log, CSV/PPTX,\nпервичный пароль admin
+"AuditLogger + AuditEvent" --> RemoteAudit : optional POST JSON
 @enduml

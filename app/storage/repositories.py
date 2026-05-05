@@ -205,3 +205,6 @@ class AuditRepository:
         with session() as conn:
             cursor = conn.execute("DELETE FROM audit_events WHERE event_time < ?", (cutoff_iso,))
             return int(cursor.rowcount)
+
+
+__all__ = ['AuditRepository', 'CalculationRepository', 'UserRecord', 'UserRepository']

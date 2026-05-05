@@ -28,3 +28,6 @@ def export_full_result_to_csv(result: FullCalculationResult, directory: str | Pa
         for p in result.temperature_analysis:
             writer.writerow(["Температурный анализ", p.temp_c, round(p.efficiency_netto_percent, 3), round(p.fuel_consumption, 3), round(p.heat_removal_factor, 5)])
     return path
+
+
+__all__ = ['export_full_result_to_csv']

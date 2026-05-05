@@ -125,3 +125,6 @@ class FullCalculationResult:
             "optimal_blocks": self.optimal_blocks.to_dict(),
             "condenser_vacuum_optimization": self.condenser_vacuum_optimization.to_dict(),
         }
+
+
+__all__ = ['CalculationInput', 'CalculationResult', 'TemperatureAnalysisPoint', 'LoadDistributionPoint', 'CondenserVacuumPoint', 'CondenserVacuumOptimizationResult', 'FullCalculationResult', 'Role']

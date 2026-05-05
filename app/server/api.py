@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -14,20 +15,23 @@ from app.storage.database import init_db
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ensure_runtime_dirs()
+    init_db()
+    get_auth_service().ensure_default_admin()
+    audit_event("api_started", "api", "system", subject="system")
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     description="Программный комплекс для оценки эффективности энергооборудования ТЭС.",
     dependencies=[Depends(rate_limit)],
+    lifespan=lifespan,
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    ensure_runtime_dirs()
-    init_db()
-    get_auth_service().ensure_default_admin()
-    audit_event("api_started", "api", "system", subject="system")
 
 
 @app.middleware("http")
@@ -63,3 +67,5 @@ def health() -> dict:
 
 app.include_router(auth.router)
 app.include_router(calc.router)
+
+__all__ = ["app", "lifespan"]

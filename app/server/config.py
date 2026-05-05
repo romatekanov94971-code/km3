@@ -89,3 +89,6 @@ def ensure_runtime_dirs() -> None:
     Path(settings.db_path).parent.mkdir(parents=True, exist_ok=True)
     Path(settings.audit_log_file).parent.mkdir(parents=True, exist_ok=True)
     Path(settings.initial_admin_credentials_file).parent.mkdir(parents=True, exist_ok=True)
+
+
+__all__ = ['Settings', 'ensure_runtime_dirs', 'get_settings']

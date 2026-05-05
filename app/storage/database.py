@@ -38,3 +38,6 @@ def init_db(db_path: str | Path | None = None) -> None:
     migration = Path(__file__).parent / "migrations" / "001_init.sql"
     with session(db_path) as conn:
         conn.executescript(migration.read_text(encoding="utf-8"))
+
+
+__all__ = ['init_db', 'session']

@@ -105,3 +105,6 @@ def calc_tes_efficiency(data: CalculationInput) -> CalculationResult:
         is_overloaded=is_overloaded,
         warning=warning,
     )
+
+
+__all__ = ['calc_block_efficiency', 'calc_own_needs_coeff', 'calc_tes_efficiency']

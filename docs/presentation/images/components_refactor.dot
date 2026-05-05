@@ -1,0 +1,25 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2", nodesep="0.45", ranksep="0.75"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", color="#555555", fontname="DejaVu Sans", fontsize=12];
+  edge [color="#555555", fontname="DejaVu Sans", fontsize=10];
+  GUI [label="PyQt6 GUI\nбез пароля в UI"];
+  API [label="FastAPI API\nHTTP(S)/JSON :8000"];
+  DEP [label="Dependencies\nget_auth_service()\nget_current_user()"];
+  AUTH [label="AuthService\nDI, no global singleton"];
+  SESSION [label="SessionManager\nRLock"];
+  INIT [label="Initial admin password\nENV or credentials file"];
+  CALC [label="Math Core\nsingle external_factor\nnamed constants"];
+  AUDIT [label="AuditLogger\nAuditEvent dataclass"];
+  DB [label="SQLite\nusers/history/audit", shape=cylinder, fillcolor="#ffffff"];
+  GUI -> API;
+  API -> DEP;
+  DEP -> AUTH;
+  AUTH -> SESSION;
+  AUTH -> INIT;
+  API -> CALC;
+  API -> AUDIT;
+  AUTH -> DB;
+  CALC -> DB;
+  AUDIT -> DB;
+}

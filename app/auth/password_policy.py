@@ -29,3 +29,6 @@ def validate_password(username: str, password: str, role: str = "user") -> None:
         raise ValidationError("Пароль должен содержать цифру.")
     if not _SPECIAL_RE.search(password):
         raise ValidationError("Пароль должен содержать спецсимвол.")
+
+
+__all__ = ['validate_password']

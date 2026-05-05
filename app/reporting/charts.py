@@ -41,3 +41,6 @@ def save_efficiency_chart(result: FullCalculationResult, output_path: str | Path
     plt.savefig(output, dpi=160)
     plt.close()
     return output
+
+
+__all__ = ['save_efficiency_chart', 'save_temperature_chart']

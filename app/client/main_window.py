@@ -174,13 +174,25 @@ class MainWindow(QMainWindow):
     def export_csv(self) -> None:
         try:
             result = self.api.export_csv(self.payload())
-            QMessageBox.information(self, "Экспорт", f"CSV создан: {result['path']}")
+            filename = result.get("filename", "CSV-файл")
+            QMessageBox.information(
+                self,
+                "Экспорт",
+                f"CSV создан на сервере: {filename}\n"
+                "Файл доступен в каталоге exports серверной части.",
+            )
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка экспорта", str(exc))
 
     def export_pptx(self) -> None:
         try:
             result = self.api.export_pptx(self.payload())
-            QMessageBox.information(self, "Экспорт", f"PPTX создан: {result['path']}")
+            filename = result.get("filename", "PPTX-файл")
+            QMessageBox.information(
+                self,
+                "Экспорт",
+                f"PPTX создан на сервере: {filename}\n"
+                "Файл доступен в каталоге exports серверной части.",
+            )
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка экспорта", str(exc))

@@ -11,6 +11,9 @@ from app.auth.service import AuthService
 from app.auth.session_manager import session_manager
 from app.server.config import get_settings
 
+# Учебный in-memory rate limit. Важно: ограничение работает per-process.
+# При запуске нескольких процессов Uvicorn/Gunicorn для production лучше
+# перенести bucket-и в Redis или другой общий storage.
 _BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 
 
@@ -59,9 +62,19 @@ def get_optional_user(
 
 
 def get_auth_service() -> AuthService:
-    """Внедрение сервиса аутентификации для роутов FastAPI.
+    """Создает AuthService для текущего запроса.
 
-    Сервис не хранит состояние, поэтому создается поверх текущего репозитория.
-    Это убирает глобальный auth_service и упрощает замену UserRepository.
+    UserRepository не имеет состояния приложения и открывает соединения с БД
+    внутри операций. SessionManager при этом остается глобальным singleton в
+    app.auth.session_manager, поэтому сессии сохраняются между запросами.
     """
     return AuthService()
+
+
+__all__ = [
+    "get_admin_user",
+    "get_auth_service",
+    "get_current_user",
+    "get_optional_user",
+    "rate_limit",
+]

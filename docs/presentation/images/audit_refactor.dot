@@ -1,0 +1,19 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  Events [label="API/Auth/Calc/Admin events"];
+  Model [label="AuditEvent dataclass\nsingle source of truth"];
+  Logger [label="audit_event()"];
+  DB [label="SQLite audit_events", shape=cylinder, fillcolor="#ffffff"];
+  File [label="Rotating audit.log"];
+  Remote [label="Remote collector\noptional"];
+  GUI [label="AuditWindow"];
+  Events -> Logger;
+  Logger -> Model;
+  Model -> DB;
+  Model -> File;
+  Model -> Remote;
+  GUI -> DB;
+}

@@ -28,3 +28,6 @@ def validate_calculation_input(data: CalculationInput) -> None:
         raise ValidationError("Коэффициент beta должен быть от 0 до 2.")
     if data.condenser_vacuum_kpa is not None and not 50 <= data.condenser_vacuum_kpa <= 110:
         raise ValidationError("Разрежение в конденсаторе должно быть в диапазоне от 50 до 110 кПа.")
+
+
+__all__ = ['validate_calculation_input']

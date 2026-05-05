@@ -1,0 +1,17 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  Input [label="CalculationInput"];
+  Factors [label="external_factor\ncomputed once"];
+  Constants [label="constants.py\nnamed coefficients"];
+  Core [label="calc_tes_efficiency()"];
+  Block [label="calc_block_efficiency()\nuses passed factor"];
+  Result [label="CalculationResult"];
+  Input -> Core;
+  Constants -> Core;
+  Core -> Factors;
+  Factors -> Block;
+  Block -> Result;
+}

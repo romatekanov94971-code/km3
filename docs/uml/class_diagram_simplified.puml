@@ -1,66 +1,79 @@
 @startuml
 skinparam classAttributeIconSize 0
-package "client" {
-  class LoginWindow
-  class MainWindow
-  class AuditWindow
-  class CreateUserWindow
-  class ApiClient
+
+package "server" {
+  class FastAPIApp {
+    +lifespan()
+  }
+  class Dependencies {
+    +get_auth_service()
+    +get_current_user()
+    +get_admin_user()
+    +rate_limit()
+  }
+  class CalculationRequest
+  class ServerMapper {
+    +calculation_request_to_input()
+  }
 }
 
 package "auth" {
   class AuthService {
+    +ensure_default_admin()
     +login()
     +create_user()
     +change_password()
+    +change_user_role()
   }
-  class SessionManager
-  class PasswordPolicy
-  class AuthenticatedUser
+  class SessionManager {
+    -_lock: RLock
+    +cleanup()
+    -_cleanup_unsafe()
+    +create_session()
+    +get_user()
+    +revoke()
+  }
 }
 
 package "calculation" {
   class CalculationInput
   class CalculationResult
-  class FullCalculationResult
   class CalculationOrchestrator {
     +run_full_calculation()
   }
-  class MathCore
-  class Optimization
-  class Formulas
+  class MathCore {
+    +calc_tes_efficiency()
+    +calc_block_efficiency()
+  }
+  class Constants
 }
 
-package "storage" {
-  class UserRepository
-  class CalculationRepository
-  class AuditRepository
-  database SQLite
+package "audit" {
+  class AuditEvent {
+    +remote_sent
+    +to_dict()
+  }
+  class AuditLogger {
+    +get_audit_logger()
+    +audit_event()
+  }
 }
 
-package "audit/reporting" {
-  class AuditLogger
-  class CsvExporter
-  class PptxExporter
+package "client" {
+  class MainWindow
+  class ApiClient
 }
 
-LoginWindow --> ApiClient
+FastAPIApp --> Dependencies
+Dependencies ..> AuthService : DI
 MainWindow --> ApiClient
-AuditWindow --> ApiClient
-CreateUserWindow --> ApiClient
-ApiClient --> AuthService : via API
-ApiClient --> CalculationOrchestrator : via API
-AuthService --> SessionManager
-AuthService --> PasswordPolicy
-AuthService --> UserRepository
+ApiClient --> FastAPIApp : HTTP(S)
+CalculationRequest --> ServerMapper
+ServerMapper --> CalculationInput
 CalculationOrchestrator --> MathCore
-CalculationOrchestrator --> Optimization
-MathCore --> Formulas
+MathCore --> Constants
 MathCore ..> CalculationInput
 MathCore ..> CalculationResult
-FullCalculationResult *-- CalculationResult
-UserRepository --> SQLite
-CalculationRepository --> SQLite
-AuditRepository --> SQLite
-AuditLogger --> AuditRepository
+AuthService --> SessionManager
+AuditLogger --> AuditEvent : replace(remote_sent)
 @enduml

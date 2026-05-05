@@ -94,7 +94,7 @@ python main.py gui
 PYTHONPATH=. pytest -q
 ```
 
-Ожидаемый результат: `18 passed`
+Ожидаемый результат: `30 passed`
 
 ## Переменные окружения
 
@@ -212,3 +212,19 @@ docs/presentation/         # архитектура в PPTX
 - `SessionManager` защищен `threading.RLock`;
 - магические числа расчетной модели вынесены в `app/calculation/constants.py`;
 - `assert` удалены из production-кода и заменены явными исключениями.
+
+
+## Исправления review v2
+
+Закрыты замечания из ревью `review v2.pdf`:
+
+- `SessionManager.cleanup()` разделен на публичный `cleanup()` и внутренний `_cleanup_unsafe()`;
+- `audit_event()` больше не создает `AuditEvent` вручную дважды, используется `dataclasses.replace()`;
+- комментарий `get_auth_service()` уточнен: `UserRepository` без состояния приложения, `SessionManager` остается singleton;
+- удален `global _LOGGER`, используется кэш `logging.getLogger()`;
+- добавлены `__all__` в публичные модули;
+- маппинг `CalculationRequest -> CalculationInput` вынесен в `app/server/mappers.py`;
+- добавлен комментарий, что rate limit является per-process;
+- deprecated `@app.on_event("startup")` заменен на FastAPI `lifespan`;
+- GUI больше не показывает серверный путь CSV/PPTX;
+- добавлен `pyproject.toml` для pytest.
