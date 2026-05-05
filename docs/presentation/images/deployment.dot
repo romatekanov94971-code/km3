@@ -1,0 +1,15 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=13];
+  edge [fontname="DejaVu Sans", fontsize=10];
+  Client [label="Рабочая станция\nPyQt6 GUI"];
+  Server [label="Сервер приложения\nFastAPI :8000"];
+  DB [label="SQLite\nusers/history/audit", shape=cylinder, fillcolor="#ffffff"];
+  Files [label="logs/ exports/", shape=folder, fillcolor="#ffffff"];
+  Remote [label="Удаленный сервер\nсбора аудита", shape=box, fillcolor="#ffffff"];
+  Client -> Server [label="HTTP/JSON локально\nHTTPS/JSON для сети"];
+  Server -> DB [label="SQL"];
+  Server -> Files [label="audit.log / CSV / PPTX"];
+  Server -> Remote [label="optional POST JSON"];
+}

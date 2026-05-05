@@ -1,0 +1,34 @@
+@startuml
+actor "Пользователь" as User
+participant "LoginWindow" as LoginWindow
+participant "ApiClient" as ApiClient
+participant "/auth/login" as AuthRoute
+participant "AuthService" as AuthService
+participant "UserRepository" as UserRepo
+participant "SessionManager" as SessionManager
+participant "AuditLogger" as AuditLogger
+
+User -> LoginWindow : ввод логина и пароля
+LoginWindow -> ApiClient : login(username, password)
+ApiClient -> AuthRoute : POST /auth/login
+AuthRoute -> AuthService : login()
+AuthService -> UserRepo : get_by_username()
+UserRepo --> AuthService : UserRecord
+
+alt неверный логин/пароль
+  AuthService -> UserRepo : set_failed_attempts()
+  AuthService -> AuditLogger : login_failed
+  AuthService --> AuthRoute : error
+else 3 ошибки
+  AuthService -> UserRepo : locked_until = now + 15 min
+  AuthService -> AuditLogger : login_failed
+else успех
+  AuthService -> UserRepo : reset_failed_attempts()
+  AuthService -> SessionManager : create_session()
+  SessionManager --> AuthService : token
+  AuthService -> AuditLogger : login_success
+  AuthService --> AuthRoute : LoginResult
+end
+AuthRoute --> ApiClient : HTTP response
+ApiClient --> LoginWindow : result/error
+@enduml

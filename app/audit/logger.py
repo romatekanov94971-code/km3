@@ -51,17 +51,35 @@ def audit_event(
 
     event_id = event_id or secrets.token_hex(8)
     event_time = utcnow_iso()
+    settings = get_settings()
+    detail_level = settings.audit_detail_level if settings.audit_detail_level in {"basic", "standard", "full"} else "standard"
     safe = safe_headers(headers)
+
+    # Настраиваемая детализация журнала:
+    # basic    - только обязательные поля события;
+    # standard - обязательные поля + безопасные заголовки + details;
+    # full     - то же, что standard; тела запросов и пароли намеренно не пишутся.
+    stored_headers = {} if detail_level == "basic" else safe
+    stored_details = {} if detail_level == "basic" else (details or {})
+
     data = {
         "event_time": event_time,
         "event_name": event_name,
         "component": component,
         "subject": subject,
-        "headers": safe,
+        "headers": stored_headers,
         "event_type": event_type,
         "event_id": event_id,
-        "details": details or {},
+        "details": stored_details,
+        "detail_level": detail_level,
     }
+    try:
+        from app.audit.remote import send_audit_event_remote
+
+        data["remote_sent"] = send_audit_event_remote(data)
+    except Exception:
+        data["remote_sent"] = False
+
     get_audit_logger().info(json.dumps(data, ensure_ascii=False))
     try:
         AuditRepository().create(
@@ -70,8 +88,8 @@ def audit_event(
             event_type=event_type,
             event_id=event_id,
             subject=subject,
-            headers=safe,
-            details=details or {},
+            headers=stored_headers,
+            details=stored_details,
             event_time=event_time,
         )
     except Exception:

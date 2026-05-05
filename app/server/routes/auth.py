@@ -7,6 +7,7 @@ from app.auth.models import AuthenticatedUser
 from app.auth.service import auth_service
 from app.common.exceptions import AccountLockedError, AuthenticationError, ValidationError
 from app.server.dependencies import get_admin_user, get_current_user
+from app.server.config import get_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -19,6 +20,10 @@ class LoginRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str = Field(min_length=1)
     new_password: str = Field(min_length=1)
+
+
+class ChangeRoleRequest(BaseModel):
+    role: str = "user"
 
 
 class CreateUserRequest(BaseModel):
@@ -72,6 +77,30 @@ def create_user(payload: CreateUserRequest, admin: AuthenticatedUser = Depends(g
     try:
         user = auth_service.create_user(payload.username, payload.password, payload.role, payload.must_change_password)
         return {"id": user.id, "username": user.username, "role": user.role, "created_by": admin.username}
+    except ValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+
+@router.get("/policy")
+def authentication_policy(user: AuthenticatedUser = Depends(get_current_user)) -> dict:
+    settings = get_settings()
+    return {
+        "auth_max_failed_attempts": settings.auth_max_failed_attempts,
+        "auth_lock_minutes": settings.auth_lock_minutes,
+        "auth_user_min_password_length": settings.auth_user_min_password_length,
+        "auth_admin_min_password_length": settings.auth_admin_min_password_length,
+        "current_user": user.username,
+        "current_role": user.role,
+    }
+
+
+
+@router.patch("/users/{username}/role")
+def change_user_role(username: str, payload: ChangeRoleRequest, admin: AuthenticatedUser = Depends(get_admin_user)) -> dict:
+    try:
+        user = auth_service.change_user_role(username, payload.role, admin.username)
+        return {"id": user.id, "username": user.username, "role": user.role, "changed_by": admin.username}
     except ValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

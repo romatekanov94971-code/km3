@@ -1,0 +1,24 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=13];
+  edge [fontname="DejaVu Sans", fontsize=10];
+  GUI [label="MainWindow"];
+  API [label="/calc/run"];
+  DEP [label="get_current_user"];
+  ORCH [label="Orchestrator"];
+  CORE [label="Math Core"];
+  OPT [label="Optimization"];
+  DB [label="CalculationRepository\nSQLite"];
+  AUDIT [label="AuditLogger"];
+  RES [label="ResultsWindow"];
+  GUI -> API [label="payload + token"];
+  API -> DEP [label="проверка сессии"];
+  API -> ORCH [label="run_full_calculation"];
+  ORCH -> CORE [label="основной расчет"];
+  ORCH -> OPT [label="температура, блоки, вакуум"];
+  API -> DB [label="сохранить историю"];
+  API -> AUDIT [label="calculation_run"];
+  API -> GUI [label="JSON result"];
+  GUI -> RES [label="показать результат"];
+}

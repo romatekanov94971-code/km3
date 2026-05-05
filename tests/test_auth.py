@@ -47,3 +47,26 @@ def test_failed_attempts_lock_account():
             service.login("petr", "bad")
     with pytest.raises(AuthenticationError):
         service.login("petr", "Qwerty1!")
+
+
+def test_authentication_parameters_are_configurable(tmp_path, monkeypatch):
+    monkeypatch.setenv("ENERGY_DB_PATH", str(tmp_path / "configurable.sqlite3"))
+    monkeypatch.setenv("ENERGY_AUDIT_LOG", str(tmp_path / "configurable_audit.log"))
+    monkeypatch.setenv("ENERGY_AUTH_MAX_FAILED_ATTEMPTS", "2")
+    monkeypatch.setenv("ENERGY_AUTH_LOCK_MINUTES", "15")
+    monkeypatch.setenv("ENERGY_AUTH_USER_MIN_PASSWORD_LENGTH", "8")
+    get_settings.cache_clear()
+    init_db()
+
+    with pytest.raises(ValidationError):
+        validate_password("shortuser", "Qwe1!a", "user")
+
+    service = AuthService()
+    service.create_user("lockuser", "Longpass1!", role="user")
+
+    for _ in range(2):
+        with pytest.raises(AuthenticationError):
+            service.login("lockuser", "bad")
+
+    with pytest.raises(AuthenticationError):
+        service.login("lockuser", "Longpass1!")

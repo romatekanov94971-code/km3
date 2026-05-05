@@ -12,6 +12,7 @@ from app.common.exceptions import ValidationError
 from app.common.schemas import CalculationInput
 from app.reporting.export_csv import export_full_result_to_csv
 from app.reporting.export_pptx import export_full_result_to_pptx
+from app.audit.retention import cleanup_old_audit_events
 from app.server.dependencies import get_admin_user, get_current_user
 from app.storage.repositories import AuditRepository, CalculationRepository
 
@@ -85,6 +86,22 @@ def history(limit: int = Query(default=50, ge=1, le=500), user: AuthenticatedUse
 @router.get("/audit")
 def audit(limit: int = Query(default=100, ge=1, le=1000), admin: AuthenticatedUser = Depends(get_admin_user)) -> list[dict]:
     return AuditRepository().list_events(limit=limit)
+
+
+@router.post("/audit/cleanup")
+def audit_cleanup(
+    retention_days: int | None = Query(default=None, ge=1, le=3650),
+    admin: AuthenticatedUser = Depends(get_admin_user),
+) -> dict:
+    deleted = cleanup_old_audit_events(retention_days)
+    audit_event(
+        "audit_cleanup_run",
+        "audit",
+        "admin_action",
+        subject=admin.username,
+        details={"retention_days": retention_days, "deleted": deleted},
+    )
+    return {"deleted": deleted, "retention_days": retention_days}
 
 
 @router.post("/export/csv")

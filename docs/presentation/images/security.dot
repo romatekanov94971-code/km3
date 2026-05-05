@@ -1,0 +1,14 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=13];
+  edge [fontname="DejaVu Sans", fontsize=10];
+  Login [label="LoginWindow\nпароль скрыт"];
+  API [label="/auth/login"];
+  Policy [label="PasswordPolicy\nнастраиваемые длины"];
+  Auth [label="AuthService\n3 попытки / 15 минут"];
+  Session [label="SessionManager\nсессионный токен"];
+  Audit [label="AuditLogger\nlogin_success/login_failed"];
+  Admin [label="Admin GUI\nсоздать пользователя\nизменить роль\nполитика безопасности"];
+  Login -> API; API -> Policy; API -> Auth; Auth -> Session; Auth -> Audit; Admin -> API;
+}

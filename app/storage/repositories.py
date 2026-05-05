@@ -94,6 +94,17 @@ class UserRepository:
     def reset_failed_attempts(self, user_id: int) -> None:
         self.set_failed_attempts(user_id, 0, None)
 
+    def update_role(self, user_id: int, role: str) -> None:
+        with session() as conn:
+            conn.execute(
+                """
+                UPDATE users
+                SET role = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (role, utcnow_iso(), user_id),
+            )
+
     def list_users(self) -> list[UserRecord]:
         with session() as conn:
             rows = conn.execute("SELECT * FROM users ORDER BY username").fetchall()

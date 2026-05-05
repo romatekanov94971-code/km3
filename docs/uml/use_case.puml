@@ -1,0 +1,44 @@
+@startuml
+left to right direction
+actor "Пользователь" as User
+actor "Администратор" as Admin
+Admin --|> User
+
+rectangle "Программный комплекс оценки эффективности энергооборудования" {
+  usecase "Войти в систему" as Login
+  usecase "Выйти из системы" as Logout
+  usecase "Сменить пароль" as ChangePassword
+  usecase "Выполнить расчет" as Calculate
+  usecase "Просмотреть результаты" as Results
+  usecase "Построить графики" as Charts
+  usecase "Экспортировать отчет" as Export
+  usecase "Просмотреть историю\nсвоих расчетов" as History
+
+  usecase "Создать пользователя" as CreateUser
+  usecase "Назначить / изменить роль" as ChangeRole
+  usecase "Просмотреть политику\nбезопасности" as SecurityPolicy
+  usecase "Просмотреть журнал аудита" as ViewAudit
+  usecase "Очистить старые\nсобытия аудита" as CleanupAudit
+}
+
+User --> Login
+User --> Logout
+User --> ChangePassword
+User --> Calculate
+User --> Results
+User --> Charts
+User --> Export
+User --> History
+
+Admin --> CreateUser
+Admin --> ChangeRole
+Admin --> SecurityPolicy
+Admin --> ViewAudit
+Admin --> CleanupAudit
+
+Calculate .> Results : <<include>>
+Charts .> Calculate : <<extend>>
+Export .> Calculate : <<extend>>
+CreateUser .> ChangeRole : <<include>>
+CleanupAudit .> ViewAudit : <<extend>>
+@enduml

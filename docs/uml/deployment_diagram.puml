@@ -1,0 +1,19 @@
+@startuml
+node "Рабочая станция пользователя" {
+  artifact "PyQt6 GUI"
+}
+
+node "Сервер приложения" {
+  artifact "FastAPI API\nport 8000"
+  artifact "Auth / Calculation / Audit / Reporting"
+}
+
+database "SQLite\nusers\ncalculation_history\naudit_events" as SQLite
+folder "logs/\nexports/" as Files
+cloud "Удаленный сервер\nсбора аудита" as RemoteAudit
+
+"PyQt6 GUI" --> "FastAPI API\nport 8000" : HTTP/JSON
+"FastAPI API\nport 8000" --> SQLite
+"Auth / Calculation / Audit / Reporting" --> Files
+"Auth / Calculation / Audit / Reporting" --> RemoteAudit : optional POST JSON
+@enduml

@@ -1,0 +1,66 @@
+@startuml
+skinparam classAttributeIconSize 0
+package "client" {
+  class LoginWindow
+  class MainWindow
+  class AuditWindow
+  class CreateUserWindow
+  class ApiClient
+}
+
+package "auth" {
+  class AuthService {
+    +login()
+    +create_user()
+    +change_password()
+  }
+  class SessionManager
+  class PasswordPolicy
+  class AuthenticatedUser
+}
+
+package "calculation" {
+  class CalculationInput
+  class CalculationResult
+  class FullCalculationResult
+  class CalculationOrchestrator {
+    +run_full_calculation()
+  }
+  class MathCore
+  class Optimization
+  class Formulas
+}
+
+package "storage" {
+  class UserRepository
+  class CalculationRepository
+  class AuditRepository
+  database SQLite
+}
+
+package "audit/reporting" {
+  class AuditLogger
+  class CsvExporter
+  class PptxExporter
+}
+
+LoginWindow --> ApiClient
+MainWindow --> ApiClient
+AuditWindow --> ApiClient
+CreateUserWindow --> ApiClient
+ApiClient --> AuthService : via API
+ApiClient --> CalculationOrchestrator : via API
+AuthService --> SessionManager
+AuthService --> PasswordPolicy
+AuthService --> UserRepository
+CalculationOrchestrator --> MathCore
+CalculationOrchestrator --> Optimization
+MathCore --> Formulas
+MathCore ..> CalculationInput
+MathCore ..> CalculationResult
+FullCalculationResult *-- CalculationResult
+UserRepository --> SQLite
+CalculationRepository --> SQLite
+AuditRepository --> SQLite
+AuditLogger --> AuditRepository
+@enduml

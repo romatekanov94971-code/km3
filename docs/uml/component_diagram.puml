@@ -1,0 +1,100 @@
+@startuml
+skinparam componentStyle rectangle
+actor "Пользователь" as User
+actor "Администратор" as Admin
+
+package "Клиентская часть PyQt6" {
+  [LoginWindow] as LoginWindow
+  [MainWindow] as MainWindow
+  [AuditWindow] as AuditWindow
+  [CreateUserWindow] as CreateUserWindow
+  [ChangeRoleWindow] as ChangeRoleWindow
+  [SecuritySettingsWindow] as SecuritySettingsWindow
+  [ApiClient] as ApiClient
+}
+
+package "Сервер FastAPI" {
+  [Auth Routes] as AuthRoutes
+  [Calc Routes] as CalcRoutes
+  [Rate Limit] as RateLimit
+  [HTTPS Config] as HTTPS
+}
+
+package "Аутентификация и авторизация" {
+  [AuthService] as AuthService
+  [PasswordPolicy] as PasswordPolicy
+  [SessionManager] as SessionManager
+}
+
+package "Вычисления" {
+  [Calculation Orchestrator] as Orchestrator
+  [Math Core] as Core
+  [Formulas] as Formulas
+  [Optimization] as Optimization
+  [Validators] as Validators
+}
+
+package "Хранение" {
+  [UserRepository] as UserRepo
+  [CalculationRepository] as CalcRepo
+  [AuditRepository] as AuditRepo
+  database "SQLite" as DB
+}
+
+package "Аудит и логирование" {
+  [AuditLogger] as AuditLogger
+  [Retention / Cleanup] as Retention
+  [RotatingFileHandler] as Rotation
+  [Remote Audit Sender] as RemoteAudit
+}
+
+package "Отчетность" {
+  [Charts] as Charts
+  [CSV Export] as CSV
+  [PPTX Export] as PPTX
+}
+
+User --> MainWindow
+Admin --> MainWindow
+MainWindow --> ApiClient
+LoginWindow --> ApiClient
+AuditWindow --> ApiClient
+CreateUserWindow --> ApiClient
+ChangeRoleWindow --> ApiClient
+SecuritySettingsWindow --> ApiClient
+
+ApiClient --> AuthRoutes : HTTP/JSON or HTTPS/JSON :8000
+ApiClient --> CalcRoutes : HTTP/JSON or HTTPS/JSON :8000
+
+AuthRoutes --> AuthService
+AuthRoutes --> RateLimit
+CalcRoutes --> RateLimit
+AuthRoutes --> HTTPS
+CalcRoutes --> HTTPS
+
+AuthService --> PasswordPolicy
+AuthService --> SessionManager
+AuthService --> UserRepo
+
+CalcRoutes --> Orchestrator
+Orchestrator --> Core
+Orchestrator --> Optimization
+Core --> Formulas
+Core --> Validators
+
+UserRepo --> DB
+CalcRepo --> DB
+AuditRepo --> DB
+CalcRoutes --> CalcRepo
+
+AuthRoutes --> AuditLogger
+CalcRoutes --> AuditLogger
+AuditLogger --> AuditRepo
+AuditLogger --> Rotation
+AuditLogger --> Retention
+AuditLogger --> RemoteAudit
+
+CalcRoutes --> CSV
+CalcRoutes --> PPTX
+MainWindow --> Charts
+@enduml

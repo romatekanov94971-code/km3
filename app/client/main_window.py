@@ -13,9 +13,13 @@ from PyQt6.QtWidgets import (
 )
 
 from app.client.api_client import ApiClient
+from app.client.audit_window import AuditWindow
 from app.client.charts_window import ChartsWindow
 from app.client.change_password_window import ChangePasswordWindow
+from app.client.change_role_window import ChangeRoleWindow
+from app.client.create_user_window import CreateUserWindow
 from app.client.results_window import ResultsWindow
+from app.client.security_settings_window import SecuritySettingsWindow
 
 
 class MainWindow(QMainWindow):
@@ -23,7 +27,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.api = api
         self.last_result: dict | None = None
-        self.setWindowTitle("Эффективность энергооборудования ТЭС")
+        role_label = "Администратор" if self.api.is_admin else "Пользователь"
+        self.setWindowTitle(f"Эффективность энергооборудования ТЭС — {role_label}: {self.api.username}")
         self.resize(760, 460)
         self._setup_menu()
 
@@ -84,6 +89,49 @@ class MainWindow(QMainWindow):
         logout_action = QAction("Выйти", self)
         logout_action.triggered.connect(self.close)
         account_menu.addAction(logout_action)
+
+        if self.api.is_admin:
+            admin_menu = self.menuBar().addMenu("Администрирование")
+
+            create_user_action = QAction("Создать пользователя", self)
+            create_user_action.triggered.connect(self.open_create_user_window)
+            admin_menu.addAction(create_user_action)
+
+            change_role_action = QAction("Изменить роль пользователя", self)
+            change_role_action.triggered.connect(self.open_change_role_window)
+            admin_menu.addAction(change_role_action)
+
+            security_policy_action = QAction("Политика безопасности", self)
+            security_policy_action.triggered.connect(self.open_security_settings_window)
+            admin_menu.addAction(security_policy_action)
+
+            audit_action = QAction("Журнал аудита", self)
+            audit_action.triggered.connect(self.open_audit_window)
+            admin_menu.addAction(audit_action)
+
+    def open_create_user_window(self) -> None:
+        if not self.api.is_admin:
+            QMessageBox.warning(self, "Доступ запрещен", "Создавать пользователей может только администратор.")
+            return
+        CreateUserWindow(self.api).exec()
+
+    def open_change_role_window(self) -> None:
+        if not self.api.is_admin:
+            QMessageBox.warning(self, "Доступ запрещен", "Изменять роли может только администратор.")
+            return
+        ChangeRoleWindow(self.api).exec()
+
+    def open_security_settings_window(self) -> None:
+        if not self.api.is_admin:
+            QMessageBox.warning(self, "Доступ запрещен", "Политика безопасности доступна только администратору.")
+            return
+        SecuritySettingsWindow(self.api).exec()
+
+    def open_audit_window(self) -> None:
+        if not self.api.is_admin:
+            QMessageBox.warning(self, "Доступ запрещен", "Журнал аудита доступен только администратору.")
+            return
+        AuditWindow(self.api).exec()
 
     def change_password(self) -> None:
         ChangePasswordWindow(self.api).exec()

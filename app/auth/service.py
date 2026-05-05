@@ -12,9 +12,8 @@ from app.auth.session_manager import session_manager
 from app.common.exceptions import AccountLockedError, AuthenticationError, ValidationError
 from app.common.utils import parse_iso_datetime, utcnow, utcnow_iso
 from app.storage.repositories import UserRecord, UserRepository
+from app.server.config import get_settings
 
-_MAX_FAILED_ATTEMPTS = 3
-_LOCK_MINUTES = 15
 _ITERATIONS = 210_000
 
 
@@ -106,13 +105,15 @@ class AuthService:
                 headers=headers,
                 details={"locked_until": user.locked_until},
             )
-            raise AccountLockedError("Учетная запись заблокирована. Автоматическая разблокировка через 15 минут.")
+            minutes = get_settings().auth_lock_minutes
+            raise AccountLockedError(f"Учетная запись заблокирована. Автоматическая разблокировка через {minutes} минут.")
 
         if not verify_password(password, user.password_hash):
+            settings = get_settings()
             attempts = user.failed_attempts + 1
             locked_iso = None
-            if attempts >= _MAX_FAILED_ATTEMPTS:
-                locked_iso = (utcnow() + timedelta(minutes=_LOCK_MINUTES)).isoformat()
+            if attempts >= settings.auth_max_failed_attempts:
+                locked_iso = (utcnow() + timedelta(minutes=settings.auth_lock_minutes)).isoformat()
             self.users.set_failed_attempts(user.id, attempts, locked_iso)
             audit_event(
                 event_name="login_failed",
@@ -135,6 +136,25 @@ class AuthService:
             headers=headers,
         )
         return LoginResult(user=authed, session_token=token, must_change_password=user.must_change_password)
+
+
+    def change_user_role(self, username: str, new_role: str, admin_username: str) -> UserRecord:
+        if new_role not in {"user", "admin"}:
+            raise ValidationError("Роль должна быть user или admin.")
+        record = self.users.get_by_username(username)
+        if record is None:
+            raise ValidationError("Пользователь не найден.")
+        self.users.update_role(record.id, new_role)
+        updated = self.users.get_by_id(record.id)
+        assert updated is not None
+        audit_event(
+            event_name="user_role_changed",
+            component="auth",
+            event_type="admin_action",
+            subject=admin_username,
+            details={"target_username": username, "old_role": record.role, "new_role": new_role},
+        )
+        return updated
 
     def logout(self, token: str | None, username: str | None = None) -> None:
         session_manager.revoke(token)

@@ -1,0 +1,32 @@
+@startuml
+actor "Пользователь" as User
+participant "MainWindow" as MainWindow
+participant "ApiClient" as ApiClient
+participant "/calc/run" as CalcRoute
+participant "Dependencies" as Dependencies
+participant "Orchestrator" as Orchestrator
+participant "Math Core" as Core
+participant "Optimization" as Optimization
+participant "CalculationRepository" as CalcRepo
+participant "AuditLogger" as AuditLogger
+
+User -> MainWindow : ввод параметров
+User -> MainWindow : Рассчитать
+MainWindow -> ApiClient : run_calculation(payload)
+ApiClient -> CalcRoute : POST /calc/run + token
+CalcRoute -> Dependencies : get_current_user()
+Dependencies --> CalcRoute : AuthenticatedUser
+CalcRoute -> Orchestrator : run_full_calculation()
+Orchestrator -> Core : calc_tes_efficiency()
+Core --> Orchestrator : CalculationResult
+Orchestrator -> Optimization : analyze_temperature()
+Orchestrator -> Optimization : find_optimal_blocks()
+Orchestrator -> Optimization : optimize_condenser_vacuum()
+Optimization --> Orchestrator : optimization results
+Orchestrator --> CalcRoute : FullCalculationResult
+CalcRoute -> CalcRepo : save history
+CalcRoute -> AuditLogger : calculation_run
+CalcRoute --> ApiClient : JSON result
+ApiClient --> MainWindow : result
+MainWindow --> User : окно результатов
+@enduml

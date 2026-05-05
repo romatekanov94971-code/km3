@@ -1,0 +1,16 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2", nodesep="0.55", ranksep="0.8"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", color="#555555", fontname="DejaVu Sans", fontsize=13];
+  edge [color="#555555", fontname="DejaVu Sans", fontsize=10];
+  User [label="Пользователь / Администратор", shape=oval, fillcolor="#ffffff"];
+  GUI [label="PyQt6 GUI\nрасчет + администрирование"];
+  API [label="FastAPI API\nHTTP(S)/JSON :8000"];
+  AUTH [label="AuthService\nPasswordPolicy\nSessionManager"];
+  CALC [label="Orchestrator\nMath Core\nOptimization"];
+  DB [label="SQLite\nusers / history / audit", shape=cylinder, fillcolor="#ffffff"];
+  AUDIT [label="Audit Logger\nRetention / Rotation\nRemote Sender"];
+  REPORT [label="CSV / PPTX\nCharts"];
+  User -> GUI; GUI -> API; API -> AUTH; API -> CALC; API -> AUDIT;
+  AUTH -> DB; CALC -> DB; AUDIT -> DB; CALC -> REPORT;
+}

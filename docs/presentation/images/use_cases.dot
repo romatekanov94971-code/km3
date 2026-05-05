@@ -1,0 +1,17 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [fontname="DejaVu Sans", fontsize=13];
+  edge [fontname="DejaVu Sans", fontsize=11];
+  User [label="Пользователь", shape=oval];
+  Admin [label="Администратор", shape=oval];
+  Login [label="Войти\nСменить пароль", shape=ellipse];
+  Calc [label="Выполнить расчет\nПросмотреть результаты", shape=ellipse];
+  Charts [label="Построить графики\nЭкспорт CSV/PPTX", shape=ellipse];
+  History [label="История расчетов", shape=ellipse];
+  Create [label="Создать пользователя", shape=ellipse];
+  Audit [label="Просмотреть аудит\nОчистить старые события", shape=ellipse];
+  User -> Login; User -> Calc; User -> Charts; User -> History;
+  Admin -> User [label="наследует"];
+  Admin -> Create; Admin -> Audit;
+}

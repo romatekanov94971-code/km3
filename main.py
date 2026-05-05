@@ -34,7 +34,11 @@ def run_api() -> None:
     from app.server.config import get_settings
 
     settings = get_settings()
-    uvicorn.run(app, host=settings.api_host, port=settings.api_port)
+    uvicorn_kwargs = {}
+    if settings.api_ssl_certfile and settings.api_ssl_keyfile:
+        uvicorn_kwargs["ssl_certfile"] = settings.api_ssl_certfile
+        uvicorn_kwargs["ssl_keyfile"] = settings.api_ssl_keyfile
+    uvicorn.run(app, host=settings.api_host, port=settings.api_port, **uvicorn_kwargs)
 
 
 def run_gui() -> None:
@@ -45,7 +49,9 @@ def run_gui() -> None:
     from app.client.main_window import MainWindow
 
     app = QApplication(sys.argv)
-    api = ApiClient()
+    from app.server.config import get_settings
+
+    api = ApiClient(get_settings().api_client_base_url)
     login = LoginWindow(api)
     if login.exec() == login.DialogCode.Accepted:
         window = MainWindow(api)

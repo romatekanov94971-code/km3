@@ -1,0 +1,13 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=13];
+  edge [fontname="DejaVu Sans", fontsize=10];
+  Events [label="События\nlogin/logout\ncalculation\nadmin actions\napi_request"];
+  Logger [label="AuditLogger\nмаскирование заголовков"];
+  DB [label="SQLite audit_events\nid, time, event, component,\nsubject, headers, type, event_id", shape=cylinder, fillcolor="#ffffff"];
+  File [label="logs/audit.log\nротация"];
+  Remote [label="Удаленный сервер\nPOST JSON"];
+  GUI [label="AuditWindow\nпросмотр/очистка"];
+  Events -> Logger; Logger -> DB; Logger -> File; Logger -> Remote; GUI -> DB;
+}
