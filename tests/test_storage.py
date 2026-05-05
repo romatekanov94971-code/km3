@@ -19,7 +19,7 @@ def isolated_db(tmp_path, monkeypatch):
 
 
 def test_user_and_calculation_history_storage():
-    user = UserRepository().create_user("admin", hash_password("Admin123!"), "admin")
+    user = UserRepository().create_user("admin", hash_password("Storage1!"), "admin")
     data = CalculationInput(400, 2, 300, 0.38, 25, 60, 3, 90)
     result = run_full_calculation(data).to_dict()
     repo = CalculationRepository()

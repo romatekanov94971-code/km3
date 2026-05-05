@@ -45,12 +45,20 @@ python main.py api
 http://127.0.0.1:8000/docs
 ```
 
-После первого запуска создается администратор:
+После первого запуска создается первичный администратор.
 
 ```text
 login: admin
-password: Admin123!
+password: см. data/initial_admin_credentials.txt
 ```
+
+Пароль больше не захардкожен в UI или коде. Перед первым запуском можно задать свой пароль:
+
+```bash
+export ENERGY_DEFAULT_ADMIN_PASSWORD='RootSecure1!'
+```
+
+Если переменная не задана, система сгенерирует пароль и сохранит его в файле `data/initial_admin_credentials.txt`.
 
 При первом входе GUI автоматически откроет окно смены пароля. После входа сменить пароль можно через меню `Аккаунт -> Сменить пароль`.
 
@@ -63,7 +71,7 @@ POST /auth/change-password
 Тело запроса:
 
 ```json
-{"old_password": "Admin123!", "new_password": "NewAdmin123!"}
+{"old_password": "<текущий пароль>", "new_password": "NewAdmin1!"}
 ```
 
 ## Запуск GUI
@@ -103,6 +111,11 @@ ENERGY_RATE_LIMIT_PER_MINUTE=120
 
 # База данных
 ENERGY_DB_PATH=data/energy_system.sqlite3
+
+# Первичный администратор
+ENERGY_DEFAULT_ADMIN_USERNAME=admin
+ENERGY_DEFAULT_ADMIN_PASSWORD=
+ENERGY_INITIAL_ADMIN_CREDENTIALS_FILE=data/initial_admin_credentials.txt
 
 # Настраиваемые параметры аутентификации
 ENERGY_AUTH_MAX_FAILED_ATTEMPTS=3
@@ -186,3 +199,16 @@ docs/DEMO_SCRIPT.md        # сценарий демонстрации
 docs/uml/                  # PlantUML-диаграммы
 docs/presentation/         # архитектура в PPTX
 ```
+
+
+## Архитектурные исправления безопасности
+
+В финальной версии устранены замечания ревизии:
+
+- первичный пароль администратора не захардкожен в UI/коде;
+- `AuthService` внедряется в FastAPI-роуты через `Depends(get_auth_service)`;
+- `AuditEvent` используется как единая модель события аудита;
+- `external_factor` рассчитывается один раз и передается в расчет блока;
+- `SessionManager` защищен `threading.RLock`;
+- магические числа расчетной модели вынесены в `app/calculation/constants.py`;
+- `assert` удалены из production-кода и заменены явными исключениями.

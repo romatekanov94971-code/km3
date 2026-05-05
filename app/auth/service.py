@@ -4,12 +4,13 @@ import hashlib
 import hmac
 import secrets
 from datetime import timedelta
+from pathlib import Path
 
 from app.audit.logger import audit_event
 from app.auth.models import AuthenticatedUser, LoginResult
 from app.auth.password_policy import validate_password
 from app.auth.session_manager import session_manager
-from app.common.exceptions import AccountLockedError, AuthenticationError, ValidationError
+from app.common.exceptions import AccountLockedError, AuthenticationError, RepositoryError, ValidationError
 from app.common.utils import parse_iso_datetime, utcnow, utcnow_iso
 from app.storage.repositories import UserRecord, UserRepository
 from app.server.config import get_settings
@@ -49,12 +50,55 @@ class AuthService:
     def __init__(self, users: UserRepository | None = None) -> None:
         self.users = users or UserRepository()
 
+    def _generate_initial_admin_password(self) -> str:
+        """Генерирует первичный пароль, соответствующий политике администратора."""
+        return f"{secrets.token_urlsafe(14)}Aa1!"
+
+    def _get_initial_admin_password(self) -> tuple[str, str]:
+        """Возвращает первичный пароль администратора и источник получения.
+
+        Пароль не хранится в коде и не подставляется в UI:
+        1) можно задать ENERGY_DEFAULT_ADMIN_PASSWORD;
+        2) иначе пароль генерируется и сохраняется в локальный файл первичных учетных данных.
+        """
+        settings = get_settings()
+        if settings.default_admin_password:
+            validate_password(settings.default_admin_username, settings.default_admin_password, "admin")
+            return settings.default_admin_password, "environment"
+
+        credentials_path = Path(settings.initial_admin_credentials_file)
+        if credentials_path.exists():
+            for line in credentials_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith("password="):
+                    password = line.split("=", 1)[1].strip()
+                    validate_password(settings.default_admin_username, password, "admin")
+                    return password, str(credentials_path)
+
+        password = self._generate_initial_admin_password()
+        validate_password(settings.default_admin_username, password, "admin")
+        credentials_path.parent.mkdir(parents=True, exist_ok=True)
+        credentials_path.write_text(
+            "Initial administrator credentials\n"
+            f"username={settings.default_admin_username}\n"
+            f"password={password}\n"
+            "Change this password immediately after first login.\n",
+            encoding="utf-8",
+        )
+        try:
+            credentials_path.chmod(0o600)
+        except OSError:
+            pass
+        return password, str(credentials_path)
+
     def ensure_default_admin(self) -> None:
-        """Создает администратора admin / Admin123!, если пользователей еще нет."""
-        if self.users.get_by_username("admin") is None:
+        """Создает первичного администратора без захардкоженного пароля."""
+        settings = get_settings()
+        username = settings.default_admin_username
+        if self.users.get_by_username(username) is None:
+            password, source = self._get_initial_admin_password()
             self.users.create_user(
-                username="admin",
-                password_hash=hash_password("Admin123!"),
+                username=username,
+                password_hash=hash_password(password),
                 role="admin",
                 must_change_password=True,
             )
@@ -63,7 +107,7 @@ class AuthService:
                 component="auth",
                 event_type="admin_action",
                 subject="system",
-                details={"username": "admin"},
+                details={"username": username, "password_source": source},
             )
 
     def create_user(self, username: str, password: str, role: str = "user", must_change_password: bool = True) -> UserRecord:
@@ -146,7 +190,8 @@ class AuthService:
             raise ValidationError("Пользователь не найден.")
         self.users.update_role(record.id, new_role)
         updated = self.users.get_by_id(record.id)
-        assert updated is not None
+        if updated is None:
+            raise RepositoryError("Не удалось прочитать пользователя после изменения роли.")
         audit_event(
             event_name="user_role_changed",
             component="auth",
@@ -177,5 +222,3 @@ class AuthService:
         self.users.update_password(record.id, hash_password(new_password), must_change_password=False)
         audit_event(event_name="password_changed", component="auth", event_type="auth", subject=user.username)
 
-
-auth_service = AuthService()

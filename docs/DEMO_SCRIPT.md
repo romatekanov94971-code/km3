@@ -40,11 +40,17 @@ http://127.0.0.1:8000/docs
 python main.py gui
 ```
 
-Дефолтный вход:
+Первичный вход:
 
 ```text
 login: admin
-password: Admin123!
+password: см. data/initial_admin_credentials.txt
+```
+
+Можно заранее задать пароль:
+
+```bash
+export ENERGY_DEFAULT_ADMIN_PASSWORD='RootSecure1!'
 ```
 
 При первом входе система потребует сменить пароль.

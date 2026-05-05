@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, Request, status
 
 from app.auth.models import AuthenticatedUser
+from app.auth.service import AuthService
 from app.auth.session_manager import session_manager
 from app.server.config import get_settings
 
@@ -55,3 +56,12 @@ def get_optional_user(
     x_session_token: Annotated[str | None, Header()] = None,
 ) -> AuthenticatedUser | None:
     return session_manager.get_user(_extract_token(authorization, x_session_token))
+
+
+def get_auth_service() -> AuthService:
+    """Внедрение сервиса аутентификации для роутов FastAPI.
+
+    Сервис не хранит состояние, поэтому создается поверх текущего репозитория.
+    Это убирает глобальный auth_service и упрощает замену UserRepository.
+    """
+    return AuthService()

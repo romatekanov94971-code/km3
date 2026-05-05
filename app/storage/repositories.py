@@ -5,6 +5,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
+from app.common.exceptions import RepositoryError
 from app.common.utils import utcnow_iso
 from app.storage.database import session
 
@@ -67,7 +68,8 @@ class UserRepository:
             )
             user_id = int(cursor.lastrowid)
         user = self.get_by_id(user_id)
-        assert user is not None
+        if user is None:
+            raise RepositoryError("Не удалось прочитать пользователя после создания.")
         return user
 
     def update_password(self, user_id: int, password_hash: str, must_change_password: bool = False) -> None:

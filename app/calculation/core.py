@@ -1,8 +1,15 @@
 from __future__ import annotations
 
+from app.calculation.constants import (
+    DEFAULT_LOAD_BETA,
+    FUEL_CONSUMPTION_COEFFICIENT,
+    OWN_NEEDS_HIGH_TEMPERATURE_INCREASE_PER_C,
+    OWN_NEEDS_HIGH_TEMPERATURE_THRESHOLD_C,
+    OWN_NEEDS_LOW_TEMPERATURE_INCREASE_PER_C,
+    OWN_NEEDS_LOW_TEMPERATURE_THRESHOLD_C,
+)
 from app.calculation.formulas import (
     condenser_vacuum_correction,
-    heat_removal_factor,
     humidity_correction,
     load_correction,
     temp_correction,
@@ -17,27 +24,24 @@ def calc_block_efficiency(
     power_mw: float,
     nominal_power: float,
     nominal_efficiency: float,
-    temp_c: float,
-    humidity: float,
-    wind_speed: float,
-    wind_dir: float,
-    beta: float = 0.4,
-    condenser_vacuum_kpa: float | None = None,
+    beta: float = DEFAULT_LOAD_BETA,
+    external_factor: float = 1.0,
+    condenser_vacuum_factor: float = 1.0,
 ) -> float:
-    """Расчет КПД одного энергоблока с учетом нагрузки и внешних факторов."""
-    external_factor = heat_removal_factor(temp_c, humidity, wind_speed, wind_dir)
-    vacuum_factor = condenser_vacuum_correction(condenser_vacuum_kpa) if condenser_vacuum_kpa else 1.0
-    efficiency_at_nominal = nominal_efficiency * external_factor * vacuum_factor
+    """Расчет КПД одного энергоблока без повторного расчета внешних факторов."""
+    efficiency_at_nominal = nominal_efficiency * external_factor * condenser_vacuum_factor
     return load_correction(power_mw, nominal_power, efficiency_at_nominal, beta)
 
 
 def calc_own_needs_coeff(temp_c: float, base_coeff: float) -> float:
     """Коэффициент собственных нужд с учетом температуры."""
     own_needs = base_coeff
-    if temp_c > 25:
-        own_needs += 0.005 * (temp_c - 25)
-    elif temp_c < 0:
-        own_needs += 0.003 * abs(temp_c)
+    if temp_c > OWN_NEEDS_HIGH_TEMPERATURE_THRESHOLD_C:
+        own_needs += OWN_NEEDS_HIGH_TEMPERATURE_INCREASE_PER_C * (
+            temp_c - OWN_NEEDS_HIGH_TEMPERATURE_THRESHOLD_C
+        )
+    elif temp_c < OWN_NEEDS_LOW_TEMPERATURE_THRESHOLD_C:
+        own_needs += OWN_NEEDS_LOW_TEMPERATURE_INCREASE_PER_C * abs(temp_c)
     return own_needs
 
 
@@ -68,12 +72,9 @@ def calc_tes_efficiency(data: CalculationInput) -> CalculationResult:
         power_mw=load_per_block,
         nominal_power=data.nominal_power_per_block,
         nominal_efficiency=data.nominal_efficiency,
-        temp_c=data.temp_c,
-        humidity=data.humidity,
-        wind_speed=data.wind_speed,
-        wind_dir=data.wind_dir,
         beta=data.beta,
-        condenser_vacuum_kpa=data.condenser_vacuum_kpa,
+        external_factor=external_factor,
+        condenser_vacuum_factor=vacuum_factor,
     )
 
     total_power_brutto = data.num_blocks * load_per_block
@@ -83,7 +84,7 @@ def calc_tes_efficiency(data: CalculationInput) -> CalculationResult:
     own_needs_power = total_power_brutto * own_needs
     total_power_netto = total_power_brutto - own_needs_power
     efficiency_netto = efficiency_brutto * (1 - own_needs)
-    fuel_consumption = 123 / efficiency_netto if efficiency_netto > 0 else float("inf")
+    fuel_consumption = FUEL_CONSUMPTION_COEFFICIENT / efficiency_netto if efficiency_netto > 0 else float("inf")
 
     return CalculationResult(
         load_per_block=load_per_block,

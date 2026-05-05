@@ -48,7 +48,7 @@
 | Пункт ТЗ | Статус | Реализация / проверка |
 |---|---:|---|
 | Настройка и контроль параметров аутентификации | ✅ | `Settings`: `ENERGY_AUTH_MAX_FAILED_ATTEMPTS`, `ENERGY_AUTH_LOCK_MINUTES`, `ENERGY_AUTH_USER_MIN_PASSWORD_LENGTH`, `ENERGY_AUTH_ADMIN_MIN_PASSWORD_LENGTH`; API `/auth/policy`; GUI `Политика безопасности`. |
-| Смена установленных администратором паролей после первичной аутентификации | ✅ | `must_change_password`; `ChangePasswordWindow`; API `/auth/change-password`; дефолтный admin создается с требованием смены. |
+| Смена установленных администратором паролей после первичной аутентификации | ✅ | `must_change_password`; `ChangePasswordWindow`; API `/auth/change-password`; первичный admin создается с требованием смены; пароль берется из `ENERGY_DEFAULT_ADMIN_PASSWORD` или генерируется в `data/initial_admin_credentials.txt`. |
 | Исключено отображение вводимых символов пароля | ✅ | `QLineEdit.EchoMode.Password` в `LoginWindow`, `ChangePasswordWindow`, `CreateUserWindow`. |
 | Блокировка после исчерпания попыток с авторазблокировкой через 15 минут | ✅ | `AuthService.login`, `locked_until`, настройка `ENERGY_AUTH_LOCK_MINUTES=15`. |
 | Пароль не совпадает с идентификатором/частью имени пользователя | ✅ | `validate_password()`: проверка включения `username` в пароль. |
@@ -113,3 +113,16 @@
 PYTHONPATH=. pytest -q
 # 18 passed
 ```
+
+
+## Дополнительная ревизия безопасности
+
+| Замечание | Статус | Исправление |
+|---|---:|---|
+| Захардкоженный пароль администратора в UI | ✅ | Поле пароля пустое; первичный пароль задается окружением или генерируется в файл. |
+| `AuditEvent` не использовался | ✅ | `audit_event()` строит и пишет объект `AuditEvent`. |
+| Двойной расчет `external_factor` | ✅ | Фактор считается один раз в `calc_tes_efficiency()` и передается в `calc_block_efficiency()`. |
+| `assert` в production-коде | ✅ | Заменены на `RepositoryError`. |
+| `SessionManager` не потокобезопасен | ✅ | Добавлен `threading.RLock`. |
+| Магические числа | ✅ | Вынесены в `app/calculation/constants.py`. |
+| Глобальный `auth_service` | ✅ | Удален; используется FastAPI DI `Depends(get_auth_service)`. |

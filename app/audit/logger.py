@@ -7,6 +7,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
 
+from app.audit.event_models import AuditEvent
 from app.common.utils import safe_headers
 from app.server.config import get_settings
 
@@ -62,35 +63,51 @@ def audit_event(
     stored_headers = {} if detail_level == "basic" else safe
     stored_details = {} if detail_level == "basic" else (details or {})
 
-    data = {
-        "event_time": event_time,
-        "event_name": event_name,
-        "component": component,
-        "subject": subject,
-        "headers": stored_headers,
-        "event_type": event_type,
-        "event_id": event_id,
-        "details": stored_details,
-        "detail_level": detail_level,
-    }
+    event = AuditEvent(
+        event_name=event_name,
+        component=component,
+        event_type=event_type,
+        event_id=event_id,
+        event_time=event_time,
+        subject=subject,
+        headers=stored_headers,
+        details=stored_details,
+        detail_level=detail_level,
+    )
+    data = event.to_dict()
+
     try:
         from app.audit.remote import send_audit_event_remote
 
-        data["remote_sent"] = send_audit_event_remote(data)
+        remote_sent = send_audit_event_remote(data)
     except Exception:
-        data["remote_sent"] = False
+        remote_sent = False
+
+    event = AuditEvent(
+        event_name=event.event_name,
+        component=event.component,
+        event_type=event.event_type,
+        event_id=event.event_id,
+        event_time=event.event_time,
+        subject=event.subject,
+        headers=event.headers,
+        details=event.details,
+        detail_level=event.detail_level,
+        remote_sent=remote_sent,
+    )
+    data = event.to_dict()
 
     get_audit_logger().info(json.dumps(data, ensure_ascii=False))
     try:
         AuditRepository().create(
-            event_name=event_name,
-            component=component,
-            event_type=event_type,
-            event_id=event_id,
-            subject=subject,
-            headers=stored_headers,
-            details=stored_details,
-            event_time=event_time,
+            event_name=event.event_name,
+            component=event.component,
+            event_type=event.event_type,
+            event_id=event.event_id,
+            subject=event.subject,
+            headers=event.headers,
+            details=event.details,
+            event_time=event.event_time,
         )
     except Exception:
         # В момент первичной инициализации БД таблицы могут еще отсутствовать.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import secrets
 from dataclasses import dataclass
 from datetime import timedelta
+from threading import RLock
 
 from app.auth.models import AuthenticatedUser
 from app.common.utils import utcnow
@@ -16,37 +17,44 @@ class Session:
 
 
 class SessionManager:
-    """Простой in-memory менеджер сессий для учебного API."""
+    """Потокобезопасный in-memory менеджер сессий для учебного API."""
 
     def __init__(self, ttl_minutes: int = 120) -> None:
         self.ttl = timedelta(minutes=ttl_minutes)
         self._sessions: dict[str, Session] = {}
+        self._lock = RLock()
 
     def create_session(self, user: AuthenticatedUser) -> str:
-        self.cleanup()
-        token = secrets.token_urlsafe(32)
-        expires_at = (utcnow() + self.ttl).timestamp()
-        self._sessions[token] = Session(token=token, user=user, expires_at=expires_at)
-        return token
+        with self._lock:
+            self.cleanup()
+            token = secrets.token_urlsafe(32)
+            expires_at = (utcnow() + self.ttl).timestamp()
+            self._sessions[token] = Session(token=token, user=user, expires_at=expires_at)
+            return token
 
     def get_user(self, token: str | None) -> AuthenticatedUser | None:
         if not token:
             return None
-        self.cleanup()
-        session = self._sessions.get(token)
-        if not session:
-            return None
-        return session.user
+        with self._lock:
+            self.cleanup()
+            session = self._sessions.get(token)
+            if not session:
+                return None
+            return session.user
 
     def revoke(self, token: str | None) -> None:
-        if token:
+        if not token:
+            return
+        with self._lock:
             self._sessions.pop(token, None)
 
     def cleanup(self) -> None:
-        now_ts = utcnow().timestamp()
-        expired = [token for token, session in self._sessions.items() if session.expires_at < now_ts]
-        for token in expired:
-            self._sessions.pop(token, None)
+        # Вызывается как снаружи, так и из методов под RLock.
+        with self._lock:
+            now_ts = utcnow().timestamp()
+            expired = [token for token, session in self._sessions.items() if session.expires_at < now_ts]
+            for token in expired:
+                self._sessions.pop(token, None)
 
 
 session_manager = SessionManager()

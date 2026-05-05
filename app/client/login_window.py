@@ -22,9 +22,9 @@ class LoginWindow(QDialog):
         self.setMinimumWidth(360)
 
         self.username = QLineEdit("admin")
-        self.password = QLineEdit("Admin123!")
+        self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.status = QLabel("Введите учетные данные")
+        self.status = QLabel("Введите имя пользователя и пароль.")
         self.login_button = QPushButton("Войти")
         self.login_button.clicked.connect(self._login)
 

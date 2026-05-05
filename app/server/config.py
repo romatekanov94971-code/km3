@@ -26,6 +26,12 @@ class Settings:
     # Storage
     db_path: str = "data/energy_system.sqlite3"
 
+    # Initial administrator. Password is never hardcoded in UI/code:
+    # set ENERGY_DEFAULT_ADMIN_PASSWORD or read generated credentials file after first API startup.
+    default_admin_username: str = "admin"
+    default_admin_password: str | None = None
+    initial_admin_credentials_file: str = "data/initial_admin_credentials.txt"
+
     # Password authentication: configurable controls required by TZ 3.2
     auth_max_failed_attempts: int = 3
     auth_lock_minutes: int = 15
@@ -58,6 +64,12 @@ def get_settings() -> Settings:
         api_client_base_url=os.getenv("ENERGY_API_BASE_URL", f"{default_scheme}://{api_host}:{api_port}"),
         rate_limit_per_minute=int(os.getenv("ENERGY_RATE_LIMIT_PER_MINUTE", "120")),
         db_path=os.getenv("ENERGY_DB_PATH", "data/energy_system.sqlite3"),
+        default_admin_username=os.getenv("ENERGY_DEFAULT_ADMIN_USERNAME", "admin"),
+        default_admin_password=_optional_env("ENERGY_DEFAULT_ADMIN_PASSWORD"),
+        initial_admin_credentials_file=os.getenv(
+            "ENERGY_INITIAL_ADMIN_CREDENTIALS_FILE",
+            "data/initial_admin_credentials.txt",
+        ),
         auth_max_failed_attempts=int(os.getenv("ENERGY_AUTH_MAX_FAILED_ATTEMPTS", "3")),
         auth_lock_minutes=int(os.getenv("ENERGY_AUTH_LOCK_MINUTES", "15")),
         auth_user_min_password_length=int(os.getenv("ENERGY_AUTH_USER_MIN_PASSWORD_LENGTH", "6")),
@@ -76,3 +88,4 @@ def ensure_runtime_dirs() -> None:
     settings = get_settings()
     Path(settings.db_path).parent.mkdir(parents=True, exist_ok=True)
     Path(settings.audit_log_file).parent.mkdir(parents=True, exist_ok=True)
+    Path(settings.initial_admin_credentials_file).parent.mkdir(parents=True, exist_ok=True)
