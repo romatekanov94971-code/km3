@@ -26,35 +26,8 @@
 
 ---
 
-## 2. Установка
 
-Откройте терминал в папке проекта.
-
-### Windows PowerShell
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### Linux / macOS
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Проверить установку PyQt6 можно командой:
-
-```bash
-python -c "from PyQt6.QtWidgets import QApplication; print('PyQt6 OK')"
-```
-
----
-
-## 3. Запуск приложения
+## 2. Запуск приложения
 
 Приложение состоит из двух частей:
 
@@ -91,47 +64,8 @@ python main.py gui
 
 ---
 
-## 4. Первый вход
 
-При первом запуске создаётся администратор:
-
-```text
-login: admin
-```
-
-Первичный пароль задаётся одним из двух способов.
-
-### Вариант 1 — задать пароль заранее
-
-Перед первым запуском API можно задать переменную окружения.
-
-Windows PowerShell:
-
-```powershell
-$env:ENERGY_DEFAULT_ADMIN_PASSWORD="RootAdmin1!"
-python main.py api
-```
-
-Linux / macOS:
-
-```bash
-export ENERGY_DEFAULT_ADMIN_PASSWORD="RootAdmin1!"
-python main.py api
-```
-
-### Вариант 2 — использовать сгенерированный пароль
-
-Если пароль заранее не задан, система сама создаст пароль и сохранит его в файл:
-
-```text
-data/initial_admin_credentials.txt
-```
-
-После первого входа программа попросит сменить первичный пароль.
-
----
-
-## 5. Главное окно
+## 3. Главное окно
 
 В главном окне задаются параметры расчёта.
 
@@ -161,7 +95,7 @@ data/initial_admin_credentials.txt
 
 ---
 
-## 6. Расчёт
+## 4. Расчёт
 
 Нажмите кнопку:
 
@@ -190,7 +124,7 @@ data/initial_admin_credentials.txt
 
 ---
 
-## 7. Графики и аудит расчёта точек
+## 5. Графики и аудит расчёта точек
 
 После расчёта нажмите:
 
@@ -226,7 +160,7 @@ data/initial_admin_credentials.txt
 
 ---
 
-## 8. История расчётов
+## 6. История расчётов
 
 Нажмите кнопку:
 
@@ -249,7 +183,7 @@ data/initial_admin_credentials.txt
 
 ---
 
-## 9. Экспорт результатов
+## 7. Экспорт результатов
 
 Доступны две кнопки:
 
@@ -270,7 +204,7 @@ PPTX удобно использовать для отчёта или демон
 
 ---
 
-## 10. Роли пользователей
+## 8. Роли пользователей
 
 В системе есть две роли:
 
@@ -305,7 +239,7 @@ admin
 
 ---
 
-## 11. Журнал аудита
+## 9. Журнал аудита
 
 Журнал аудита доступен администратору.
 
@@ -330,7 +264,7 @@ admin
 
 ---
 
-## 12. Смена пароля
+## 10. Смена пароля
 
 Пользователь может сменить пароль через меню:
 
@@ -347,35 +281,10 @@ admin
 - не содержать пробелы;
 - не совпадать с логином.
 
----
-
-## 13. Настройки через переменные окружения
-
-Обычно для учебного запуска ничего менять не нужно.
-
-Основные переменные:
-
-```text
-ENERGY_DB_PATH
-ENERGY_API_HOST
-ENERGY_API_PORT
-ENERGY_API_CLIENT_BASE_URL
-ENERGY_DEFAULT_ADMIN_USERNAME
-ENERGY_DEFAULT_ADMIN_PASSWORD
-ENERGY_INITIAL_ADMIN_CREDENTIALS_FILE
-ENERGY_AUTH_MAX_FAILED_ATTEMPTS
-ENERGY_AUTH_LOCK_MINUTES
-ENERGY_AUTH_USER_MIN_PASSWORD_LENGTH
-ENERGY_AUTH_ADMIN_MIN_PASSWORD_LENGTH
-ENERGY_AUDIT_LOG
-ENERGY_AUDIT_DETAIL_LEVEL
-ENERGY_AUDIT_RETENTION_DAYS
-ENERGY_AUDIT_REMOTE_URL
-```
 
 ---
 
-## 14. Запуск тестов
+## 11. Запуск тестов
 
 Для проверки проекта:
 
@@ -391,71 +300,8 @@ PYTHONPATH=. pytest -q
 
 ---
 
-## 15. Частые проблемы
 
-### PyQt6 не найден в VS Code
-
-Если VS Code показывает ошибку:
-
-```text
-Не удается разрешить импорт "PyQt6.QtWidgets"
-```
-
-значит выбран не тот Python-интерпретатор.
-
-Нужно выбрать интерпретатор виртуального окружения:
-
-```text
-.venv/Scripts/python.exe
-```
-
-в Windows или:
-
-```text
-.venv/bin/python
-```
-
-в Linux / macOS.
-
-### GUI не подключается к API
-
-Проверьте, что API запущен:
-
-```bash
-python main.py api
-```
-
-И что в браузере открывается:
-
-```text
-http://127.0.0.1:8000/health
-```
-
-### Не найден первичный пароль администратора
-
-Проверьте файл:
-
-```text
-data/initial_admin_credentials.txt
-```
-
-Или задайте пароль через:
-
-```text
-ENERGY_DEFAULT_ADMIN_PASSWORD
-```
-
-### Экспорт не появился рядом с GUI
-
-Экспорт сохраняется в папке сервера:
-
-```text
-exports/
-```
-
----
-
-## 16. Описание результата
+## 12. Описание результата
 
 После выполнения расчёта система формирует набор показателей:
 
@@ -472,7 +318,7 @@ exports/
 
 ---
 
-## 17. Завершение работы
+## 13. Завершение работы
 
 Для выхода из GUI используйте:
 
