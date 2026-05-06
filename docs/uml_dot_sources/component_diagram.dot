@@ -1,0 +1,85 @@
+digraph component {
+	graph [bgcolor=white compound=true nodesep=0.45 pad=0.2 rankdir=LR ranksep=0.75]
+	node [color="#334155" fillcolor=white fontname="DejaVu Sans" fontsize=12 shape=box style="rounded,filled"]
+	edge [color="#475569" fontname="DejaVu Sans" fontsize=10]
+	subgraph cluster_client {
+		color="#93c5fd" fontname="DejaVu Sans" label="Клиент PyQt6"
+		login [label=LoginWindow]
+		main [label="MainWindow
+параметры + итог"]
+		charts [label="ChartsWindow
+графики + trace"]
+		history [label=HistoryWindow]
+		auditw [label=AuditWindow]
+		api_client [label="ApiClient facade
+Auth/Calc/Audit/Export"]
+	}
+	subgraph cluster_server {
+		color="#86efac" fontname="DejaVu Sans" label="FastAPI Server :8000"
+		auth_routes [label="Auth Routes"]
+		calc_routes [label="Calc Routes"]
+		deps [label="Dependencies
+Auth + Rate Limit"]
+	}
+	subgraph cluster_auth {
+		color="#fde68a" fontname="DejaVu Sans" label=Auth
+		authsvc [label=AuthService]
+		iuserrepo [label=IUserRepository]
+		userrepo [label=UserRepository]
+		session [label="SessionManager
+in-memory"]
+		policy [label=PasswordPolicy]
+	}
+	subgraph cluster_calc {
+		color="#ddd6fe" fontname="DejaVu Sans" label=Calculation
+		mapper [label="DTO → CalculationInput"]
+		orchestrator [label=Orchestrator]
+		core [label="Math Core
+season + factors"]
+		trace [label="CalculationTrace
+formula + substitution"]
+		opt [label="Optimization
+blocks/vacuum"]
+	}
+	subgraph cluster_audit {
+		color="#fecaca" fontname="DejaVu Sans" label=Audit
+		registry [label="Audit Sink Registry
+@register_audit_sink"]
+		sqlite_sink [label=SQLiteAuditSink]
+		remote_sink [label=RemoteQueueAuditSink]
+		file_sink [label=FileAuditSink]
+	}
+	subgraph cluster_storage {
+		color="#cbd5e1" fontname="DejaVu Sans" label=Storage
+		db [label="SQLite WAL" fillcolor=white shape=cylinder style=filled]
+		files [label="logs/ exports/ data/" fillcolor=white shape=folder style=filled]
+	}
+	login -> api_client
+	main -> api_client
+	charts -> api_client
+	history -> api_client
+	auditw -> api_client
+	api_client -> auth_routes [label="HTTP(S)/JSON"]
+	api_client -> calc_routes [label="HTTP(S)/JSON"]
+	auth_routes -> deps
+	calc_routes -> deps
+	deps -> authsvc
+	authsvc -> policy
+	authsvc -> session
+	authsvc -> iuserrepo
+	userrepo -> iuserrepo [arrowhead=empty]
+	userrepo -> db
+	calc_routes -> mapper
+	mapper -> orchestrator
+	orchestrator -> core
+	orchestrator -> opt
+	core -> trace
+	trace -> charts
+	auth_routes -> registry
+	calc_routes -> registry
+	registry -> sqlite_sink
+	registry -> remote_sink
+	registry -> file_sink
+	sqlite_sink -> db
+	file_sink -> files
+}

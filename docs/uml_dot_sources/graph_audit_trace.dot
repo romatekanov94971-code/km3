@@ -1,0 +1,20 @@
+digraph graph_audit_trace {
+	graph [bgcolor=white nodesep=0.55 pad=0.2 rankdir=LR ranksep=0.7]
+	node [color="#334155" fillcolor=white fontname="DejaVu Sans" fontsize=12 shape=box style="rounded,filled"]
+	edge [color="#475569" fontname="DejaVu Sans" fontsize=10]
+	input [label="Входные параметры"]
+	core [label="Расчетное ядро"]
+	trace [label="calculation_trace
+формула + подстановка"]
+	points [label="Точки графика
+temperature/load/vacuum"]
+	ui [label="GUI вкладка
+Аудит графиков"]
+	copy [label="Копирование расчета
+выбранной точки"]
+	input -> core
+	core -> trace
+	trace -> points
+	points -> ui
+	ui -> copy
+}

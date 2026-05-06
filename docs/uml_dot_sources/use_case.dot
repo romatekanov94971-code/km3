@@ -1,0 +1,36 @@
+digraph use_case {
+	graph [bgcolor=white nodesep=0.5 pad=0.2 rankdir=LR ranksep=0.9]
+	node [color="#334155" fontname="DejaVu Sans" fontsize=12]
+	edge [color="#475569" fontname="DejaVu Sans" fontsize=10]
+	User [label="Пользователь" fillcolor="#eff6ff" shape=box style="rounded,filled"]
+	Admin [label="Администратор" fillcolor="#fef3c7" shape=box style="rounded,filled"]
+	login [label="Войти" fillcolor=white shape=ellipse style=filled]
+	pwd [label="Сменить пароль" fillcolor=white shape=ellipse style=filled]
+	calc [label="Выполнить расчёт" fillcolor=white shape=ellipse style=filled]
+	graphs [label="Открыть графики
+и аудит точки" fillcolor=white shape=ellipse style=filled]
+	hist [label="Посмотреть историю" fillcolor=white shape=ellipse style=filled]
+	export [label="Экспорт CSV/PPTX" fillcolor=white shape=ellipse style=filled]
+	audit [label="Просмотр аудита" fillcolor=white shape=ellipse style=filled]
+	users [label="Создать пользователя" fillcolor=white shape=ellipse style=filled]
+	roles [label="Изменить роль" fillcolor=white shape=ellipse style=filled]
+	policy [label="Политика безопасности" fillcolor=white shape=ellipse style=filled]
+	User -> login
+	User -> pwd
+	User -> calc
+	User -> graphs
+	User -> hist
+	User -> export
+	Admin -> login
+	Admin -> pwd
+	Admin -> calc
+	Admin -> graphs
+	Admin -> hist
+	Admin -> export
+	Admin -> audit
+	Admin -> users
+	Admin -> roles
+	Admin -> policy
+	graphs -> calc [label=include]
+	export -> calc [label=include]
+}

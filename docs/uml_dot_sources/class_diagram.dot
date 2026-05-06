@@ -1,0 +1,47 @@
+digraph class_diagram {
+	graph [bgcolor=white nodesep=0.35 pad=0.2 rankdir=TB ranksep=0.55]
+	node [color="#334155" fillcolor=white fontname="DejaVu Sans" fontsize=12 shape=box style="rounded,filled"]
+	edge [color="#475569" fontname="DejaVu Sans" fontsize=10]
+	CalculationInput [label="CalculationInput
+load, blocks, temp, humidity
+wind, vacuum, operation_mode"]
+	CalculationResult [label="CalculationResult
+efficiency, factors, fuel
+operation_mode"]
+	Trace [label="calculation_trace
+input + formula
+substitution + factors"]
+	AuthenticatedUser [label="AuthenticatedUser
+role: UserRole | str
+is_admin"]
+	UserRole [label="<<enum>> UserRole
+USER / ADMIN"]
+	AuthService [label="AuthService
+login/create/change role"]
+	IUserRepository [label="<<interface>> IUserRepository"]
+	UserRepository [label="UserRepository
+SQLite implementation"]
+	AuditEvent [label="AuditEvent
+sequence_number
+remote_queued"]
+	AuditSink [label="<<interface>> AuditSink
+write(event)"]
+	SQLiteSink [label=SQLiteAuditSink]
+	RemoteSink [label=RemoteQueueAuditSink]
+	FileSink [label=FileAuditSink]
+	ChartsWindow [label="ChartsWindow
+summary chart + trace table"]
+	MainWindow [label="MainWindow
+grouped input + summary"]
+	CalculationInput -> CalculationResult
+	CalculationResult -> Trace
+	ChartsWindow -> Trace
+	MainWindow -> ChartsWindow
+	AuthenticatedUser -> UserRole
+	AuthService -> IUserRepository
+	UserRepository -> IUserRepository [arrowhead=empty]
+	SQLiteSink -> AuditSink [arrowhead=empty]
+	RemoteSink -> AuditSink [arrowhead=empty]
+	FileSink -> AuditSink [arrowhead=empty]
+	AuditSink -> AuditEvent
+}

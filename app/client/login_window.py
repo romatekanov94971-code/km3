@@ -46,12 +46,7 @@ class LoginWindow(QDialog):
         form.addRow("Пользователь", self.username)
         form.addRow("Пароль", self.password)
 
-        hint = QLabel(
-            "Первичный пароль администратора задается через ENERGY_DEFAULT_ADMIN_PASSWORD "
-            "или генерируется в data/initial_admin_credentials.txt."
-        )
-        hint.setProperty("role", "subtitle")
-        hint.setWordWrap(True)
+
 
         layout = QVBoxLayout()
         layout.setSpacing(12)
@@ -61,7 +56,6 @@ class LoginWindow(QDialog):
         layout.addWidget(self.status)
         layout.addLayout(form)
         layout.addWidget(self.login_button)
-        layout.addWidget(hint)
         self.setLayout(layout)
 
     def _login(self) -> None:

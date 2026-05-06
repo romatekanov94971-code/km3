@@ -1,0 +1,32 @@
+digraph deployment {
+	graph [bgcolor=white nodesep=0.6 pad=0.2 rankdir=LR ranksep=0.8]
+	node [color="#334155" fillcolor=white fontname="DejaVu Sans" fontsize=12 shape=box style="rounded,filled"]
+	edge [color="#475569" fontname="DejaVu Sans" fontsize=10]
+	subgraph cluster_ws {
+		color="#93c5fd" fontname="DejaVu Sans" label="Рабочая станция"
+		gui [label="PyQt6 GUI"]
+		client [label=ApiClient]
+	}
+	subgraph cluster_srv {
+		color="#86efac" fontname="DejaVu Sans" label="Сервер приложения"
+		api [label="FastAPI API
+127.0.0.1:8000"]
+		auth [label="Auth + SessionManager"]
+		calc [label="Math Core + Trace"]
+		audit [label="Audit sinks + Queue"]
+		sqlite [label="SQLite WAL" fillcolor=white shape=cylinder style=filled]
+		fs [label="logs / exports / data" fillcolor=white shape=folder style=filled]
+		remote [label="Remote Audit Collector" fillcolor=white shape=component style=filled]
+	}
+	gui -> client
+	client -> api [label="HTTP/JSON локально
+HTTPS/JSON для сети"]
+	api -> auth
+	api -> calc
+	api -> audit
+	auth -> sqlite
+	calc -> sqlite
+	audit -> sqlite
+	audit -> fs
+	audit -> remote [label="optional HTTP(S)"]
+}
