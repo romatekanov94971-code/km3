@@ -111,7 +111,7 @@
 
 ```bash
 PYTHONPATH=. pytest -q
-# 41 passed
+# 46 passed
 ```
 
 
@@ -172,3 +172,14 @@ PYTHONPATH=. pytest -q
 | Таблица портов и протоколов добавлена в PPTX и ARCHITECTURE.md | ✅ |
 | `temp_c` валидируется в Pydantic-схеме | ✅ |
 | Ограничение in-memory SessionManager задокументировано | ✅ |
+
+
+## Исправления code review v2
+
+| Замечание | Статус |
+|---|---:|
+| `is_admin` бросает `ValueError` при `role=UserRole.ADMIN` на Python 3.12 | ✅ |
+| Мертвое поле `AuditEvent.remote_sent` | ✅ |
+| Неявный logout через `closeEvent` | ✅ |
+| `audit_event()` как God Function / нарушение SRP | ✅ частично исправлено через sink-цепочку |
+| Нет интерфейса репозитория для AuthService | ✅ добавлен `IUserRepository` |

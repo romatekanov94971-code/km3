@@ -15,6 +15,9 @@ def test_audit_logger_uses_replace_and_no_global_logger():
     assert "from dataclasses import replace" in source
     assert "replace(event, sequence_number=sequence_number)" in source
     assert "replace(event, remote_queued=remote_queued)" in source
+    assert "class SQLiteAuditSink" in source
+    assert "class RemoteQueueAuditSink" in source
+    assert "class FileAuditSink" in source
     assert "global _LOGGER" not in source
     assert "_LOGGER:" not in source
 

@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         account_menu.addAction(change_password_action)
 
         logout_action = QAction("Выйти", self)
-        logout_action.triggered.connect(self.close)
+        logout_action.triggered.connect(self._do_logout_and_close)
         account_menu.addAction(logout_action)
 
         if self.api.is_admin:
@@ -134,13 +134,23 @@ class MainWindow(QMainWindow):
             return
         AuditWindow(self.api).exec()
 
-    def closeEvent(self, event: QCloseEvent) -> None:
-        if not self._logout_sent and self.api.token:
-            try:
-                self.api.logout()
-                self._logout_sent = True
-            except Exception as exc:
+    def _do_logout(self, *, show_errors: bool = False) -> None:
+        if self._logout_sent or not self.api.token:
+            return
+        try:
+            self.api.logout()
+        except Exception as exc:
+            if show_errors:
                 QMessageBox.warning(self, "Выход", f"Не удалось зарегистрировать выход на сервере: {exc}")
+        finally:
+            self._logout_sent = True
+
+    def _do_logout_and_close(self) -> None:
+        self._do_logout(show_errors=True)
+        self.close()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._do_logout(show_errors=False)
         super().closeEvent(event)
 
     def change_password(self) -> None:

@@ -1,90 +1,70 @@
 @startuml
 skinparam componentStyle rectangle
+
 actor "Пользователь" as User
 actor "Администратор" as Admin
 
-package "Клиентская часть PyQt6" {
-  [LoginWindow] as LoginWindow
+package "Клиент PyQt6" {
   [MainWindow] as MainWindow
-  [AuditWindow] as AuditWindow
-  [ApiClient] as ApiClient
+  [ApiClient facade] as ApiFacade
+  [AuthApiClient] as AuthClient
+  [CalcApiClient] as CalcClient
+  [AuditApiClient] as AuditClient
+  [ExportApiClient] as ExportClient
 }
 
-package "Сервер FastAPI" {
-  [FastAPI App\nlifespan startup] as API
+package "FastAPI Server" {
   [Auth Routes] as AuthRoutes
   [Calc Routes] as CalcRoutes
-  [Dependencies] as Dependencies
-  [Rate Limit\nin-memory per-process] as RateLimit
-  [CalculationRequest DTO] as CalcDTO
-  [Server Mapper] as Mapper
+  [Dependencies / Rate Limit] as Dependencies
 }
 
-package "Аутентификация" {
+package "Auth" {
   [AuthService] as AuthService
-  [PasswordPolicy] as PasswordPolicy
-  [SessionManager\nRLock + in-memory] as SessionManager
-  [Initial Admin\nENV or generated file] as InitialAdmin
+  [IUserRepository protocol] as IUserRepo
+  [UserRepository] as UserRepo
+  [SessionManager] as SessionManager
+  [UserRole enum] as UserRole
 }
 
-package "Вычисления" {
-  [CalculationInput\nDomain Model] as CalcInput
-  [Calculation Orchestrator] as Orchestrator
-  [Math Core] as Core
-  [Constants] as Constants
-  [Formulas] as Formulas
-  [Optimization] as Optimization
-}
-
-package "Хранение" {
-  [Repositories] as Repos
-  database "SQLite" as DB
-}
-
-package "Аудит" {
+package "Audit" {
   [AuditEvent] as AuditEvent
-  [AuditLogger\nsequence_number + queue] as AuditLogger
-  [Retention / Rotation] as AuditStorage
+  [SQLiteAuditSink] as SQLiteSink
+  [RemoteQueueAuditSink] as RemoteSink
+  [FileAuditSink] as FileSink
   [Remote Audit Queue] as RemoteQueue
-  [Remote Audit Sender] as RemoteAudit
 }
 
-User --> LoginWindow
-Admin --> LoginWindow
-LoginWindow --> ApiClient
-MainWindow --> ApiClient
-AuditWindow --> ApiClient
+package "Storage" {
+  database "SQLite WAL" as DB
+}
 
-ApiClient --> AuthRoutes : HTTP(S)/JSON :8000
-ApiClient --> CalcRoutes : HTTP(S)/JSON :8000
+User --> MainWindow
+Admin --> MainWindow
+MainWindow --> ApiFacade
+ApiFacade --> AuthClient
+ApiFacade --> CalcClient
+ApiFacade --> AuditClient
+ApiFacade --> ExportClient
 
-API --> Dependencies
-API --> AuthRoutes
-API --> CalcRoutes
-API --> AuditLogger
+AuthClient --> AuthRoutes : HTTP(S)/JSON :8000
+CalcClient --> CalcRoutes : HTTP(S)/JSON :8000
+AuditClient --> CalcRoutes : HTTP(S)/JSON :8000
+ExportClient --> CalcRoutes : HTTP(S)/JSON :8000
 
-Dependencies --> AuthService : Depends(get_auth_service)
-Dependencies --> RateLimit
-AuthRoutes --> AuthService
-AuthService --> PasswordPolicy
+AuthRoutes --> Dependencies
+CalcRoutes --> Dependencies
+Dependencies --> AuthService
+AuthService --> IUserRepo
+IUserRepo <|.. UserRepo
 AuthService --> SessionManager
-AuthService --> InitialAdmin
-AuthService --> Repos
+AuthService --> UserRole
 
-CalcRoutes --> CalcDTO
-CalcDTO --> Mapper
-Mapper --> CalcInput
-CalcRoutes --> Orchestrator
-Orchestrator --> Core
-Orchestrator --> Optimization
-Core --> Constants
-Core --> Formulas
-Optimization --> Core
-
-Repos --> DB
-AuditLogger --> AuditEvent
-AuditLogger --> Repos
-AuditLogger --> AuditStorage
-AuditLogger --> RemoteQueue
-RemoteQueue --> RemoteAudit
+CalcRoutes --> SQLiteSink
+AuthRoutes --> SQLiteSink
+SQLiteSink --> AuditEvent
+SQLiteSink --> DB
+RemoteSink --> RemoteQueue
+FileSink --> AuditEvent
+UserRepo --> DB
 @enduml

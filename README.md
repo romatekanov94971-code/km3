@@ -94,7 +94,7 @@ python main.py gui
 PYTHONPATH=. pytest -q
 ```
 
-Ожидаемый результат: `41 passed`
+Ожидаемый результат: `46 passed`
 
 ## Переменные окружения
 
@@ -239,7 +239,7 @@ docs/presentation/         # архитектура в PPTX
 - `app/auth/service.py` экспортирует только публичный `AuthService`;
 - добавлен `tests/test_remaining_issues.py`.
 
-Проверка: `41 passed`.
+Проверка: `46 passed`.
 
 
 ## Исправления code review
@@ -260,3 +260,17 @@ docs/presentation/         # архитектура в PPTX
 ### Ограничение SessionManager
 
 Сессии хранятся в памяти процесса. Это нормально для учебной демонстрации, но при перезапуске API пользователи должны войти повторно. Для multi-worker / production-развертывания SessionManager нужно заменить на Redis/БД-backed хранилище сессий.
+
+
+## Исправления code review v2
+
+Закрыты новые замечания повторного ревью:
+
+- исправлен `AuthenticatedUser.is_admin` для Python 3.12: enum сравнивается через `.value`, без `UserRole(str(...))`;
+- из `AuditEvent` удалено мертвое поле `remote_sent`; оставлено актуальное `remote_queued`;
+- пункт меню «Выйти» теперь явно вызывает `_do_logout_and_close()`;
+- общая логика logout вынесена в `_do_logout()`, а `closeEvent()` использует тот же метод без всплывающего окна при закрытии;
+- `audit_event()` декомпозирован на sink-объекты: `SQLiteAuditSink`, `RemoteQueueAuditSink`, `FileAuditSink`;
+- для `AuthService` добавлен протокол `IUserRepository`, чтобы снизить привязку к конкретному SQLite-репозиторию.
+
+Проверка: `46 passed`.

@@ -14,7 +14,8 @@ class AuthenticatedUser:
 
     @property
     def is_admin(self) -> bool:
-        return UserRole(str(self.role)) is UserRole.ADMIN
+        role_value = self.role.value if isinstance(self.role, UserRole) else str(self.role)
+        return role_value == UserRole.ADMIN.value
 
 
 @dataclass(frozen=True)

@@ -25,7 +25,6 @@ class AuditEvent:
     detail_level: str = "standard"
     sequence_number: int | None = None
     remote_queued: bool = False
-    remote_sent: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

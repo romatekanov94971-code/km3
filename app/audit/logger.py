@@ -6,11 +6,60 @@ import secrets
 from dataclasses import replace
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from app.audit.event_models import AuditEvent
 from app.common.utils import safe_headers
 from app.server.config import get_settings
+
+
+class AuditSink(Protocol):
+    """Канал обработки события аудита."""
+
+    def write(self, event: AuditEvent) -> AuditEvent:
+        ...
+
+
+class SQLiteAuditSink:
+    """Сохраняет событие в SQLite и добавляет sequence_number."""
+
+    def write(self, event: AuditEvent) -> AuditEvent:
+        from app.storage.repositories import AuditRepository
+
+        sequence_number: int | None = None
+        try:
+            sequence_number = AuditRepository().create(
+                event_name=event.event_name,
+                component=event.component,
+                event_type=event.event_type,
+                event_id=event.event_id,
+                subject=event.subject,
+                headers=event.headers,
+                details=event.details,
+                event_time=event.event_time,
+            )
+        except Exception:
+            # В момент первичной инициализации БД таблицы могут еще отсутствовать.
+            pass
+        return replace(event, sequence_number=sequence_number)
+
+
+class RemoteQueueAuditSink:
+    """Ставит событие в неблокирующую очередь удаленной отправки."""
+
+    def write(self, event: AuditEvent) -> AuditEvent:
+        from app.audit.remote import enqueue_audit_event_remote
+
+        remote_queued = enqueue_audit_event_remote(event.to_dict())
+        return replace(event, remote_queued=remote_queued)
+
+
+class FileAuditSink:
+    """Пишет финальный AuditEvent в файловый журнал с ротацией."""
+
+    def write(self, event: AuditEvent) -> AuditEvent:
+        get_audit_logger().info(json.dumps(event.to_dict(), ensure_ascii=False))
+        return event
 
 
 def get_audit_logger() -> logging.Logger:
@@ -55,6 +104,43 @@ def get_audit_logger() -> logging.Logger:
     return logger
 
 
+def get_audit_sinks() -> tuple[AuditSink, ...]:
+    """Порядок важен: сначала SQLite для sequence_number, потом remote queue, затем файл."""
+    return (SQLiteAuditSink(), RemoteQueueAuditSink(), FileAuditSink())
+
+
+def build_audit_event(
+    event_name: str,
+    component: str,
+    event_type: str,
+    subject: str | None = None,
+    headers: dict[str, Any] | None = None,
+    details: dict[str, Any] | None = None,
+    event_id: str | None = None,
+) -> AuditEvent:
+    """Формирует AuditEvent без записи в sinks."""
+    from app.common.utils import utcnow_iso
+
+    settings = get_settings()
+    detail_level = settings.audit_detail_level if settings.audit_detail_level in {"basic", "standard", "full"} else "standard"
+    safe = safe_headers(headers)
+
+    stored_headers = {} if detail_level == "basic" else safe
+    stored_details = {} if detail_level == "basic" else (details or {})
+
+    return AuditEvent(
+        event_name=event_name,
+        component=component,
+        event_type=event_type,
+        event_id=event_id or secrets.token_hex(8),
+        event_time=utcnow_iso(),
+        subject=subject,
+        headers=stored_headers,
+        details=stored_details,
+        detail_level=detail_level,
+    )
+
+
 def audit_event(
     event_name: str,
     component: str,
@@ -64,60 +150,28 @@ def audit_event(
     details: dict[str, Any] | None = None,
     event_id: str | None = None,
 ) -> str:
-    """Регистрирует событие в файле, SQLite и очереди удаленного аудита."""
-    from app.audit.remote import enqueue_audit_event_remote
-    from app.common.utils import utcnow_iso
-    from app.storage.repositories import AuditRepository
-
-    event_id = event_id or secrets.token_hex(8)
-    event_time = utcnow_iso()
-    settings = get_settings()
-    detail_level = settings.audit_detail_level if settings.audit_detail_level in {"basic", "standard", "full"} else "standard"
-    safe = safe_headers(headers)
-
-    # Настраиваемая детализация журнала:
-    # basic    - только обязательные поля события;
-    # standard - обязательные поля + безопасные заголовки + details;
-    # full     - то же, что standard; тела запросов и пароли намеренно не пишутся.
-    stored_headers = {} if detail_level == "basic" else safe
-    stored_details = {} if detail_level == "basic" else (details or {})
-
-    event = AuditEvent(
+    """Регистрирует событие аудита через цепочку sink-объектов."""
+    event = build_audit_event(
         event_name=event_name,
         component=component,
         event_type=event_type,
-        event_id=event_id,
-        event_time=event_time,
         subject=subject,
-        headers=stored_headers,
-        details=stored_details,
-        detail_level=detail_level,
+        headers=headers,
+        details=details,
+        event_id=event_id,
     )
-
-    sequence_number: int | None = None
-    try:
-        sequence_number = AuditRepository().create(
-            event_name=event.event_name,
-            component=event.component,
-            event_type=event.event_type,
-            event_id=event.event_id,
-            subject=event.subject,
-            headers=event.headers,
-            details=event.details,
-            event_time=event.event_time,
-        )
-    except Exception:
-        # В момент первичной инициализации БД таблицы могут еще отсутствовать.
-        pass
-
-    event = replace(event, sequence_number=sequence_number)
-    data = event.to_dict()
-    remote_queued = enqueue_audit_event_remote(data)
-    event = replace(event, remote_queued=remote_queued)
-    data = event.to_dict()
-
-    get_audit_logger().info(json.dumps(data, ensure_ascii=False))
-    return event_id
+    for sink in get_audit_sinks():
+        event = sink.write(event)
+    return event.event_id
 
 
-__all__ = ["audit_event", "get_audit_logger"]
+__all__ = [
+    "AuditSink",
+    "FileAuditSink",
+    "RemoteQueueAuditSink",
+    "SQLiteAuditSink",
+    "audit_event",
+    "build_audit_event",
+    "get_audit_logger",
+    "get_audit_sinks",
+]

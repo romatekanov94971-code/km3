@@ -74,3 +74,12 @@
 ## Ограничения SessionManager
 
 Текущий `SessionManager` хранит токены в памяти одного процесса. При перезапуске API все сессии сбрасываются. При запуске нескольких workers каждый worker будет иметь собственное хранилище сессий. Для production нужно заменить реализацию на Redis или таблицу БД.
+
+
+## Изменения после code review v2
+
+- `AuthenticatedUser.is_admin` реализован без небезопасного `UserRole(str(role))`.
+- Аудит использует цепочку sink-объектов: SQLite → remote queue → file log.
+- `AuditEvent` содержит `remote_queued`, но не содержит устаревшее поле `remote_sent`.
+- GUI logout вынесен в отдельный метод и вызывается явно из пункта меню.
+- `AuthService` принимает `IUserRepository`, что снижает зависимость от конкретного класса `UserRepository`.

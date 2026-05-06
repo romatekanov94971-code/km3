@@ -13,6 +13,7 @@ from app.auth.session_manager import session_manager
 from app.common.exceptions import AccountLockedError, AuthenticationError, RepositoryError, ValidationError
 from app.common.schemas import UserRole
 from app.common.utils import parse_iso_datetime, utcnow, utcnow_iso
+from app.storage.interfaces import IUserRepository
 from app.storage.repositories import UserRecord, UserRepository
 from app.server.config import get_settings
 
@@ -48,7 +49,7 @@ def to_authenticated_user(record: UserRecord) -> AuthenticatedUser:
 
 
 class AuthService:
-    def __init__(self, users: UserRepository | None = None) -> None:
+    def __init__(self, users: IUserRepository | None = None) -> None:
         self.users = users or UserRepository()
 
     def _generate_initial_admin_password(self) -> str:

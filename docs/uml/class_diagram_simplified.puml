@@ -1,79 +1,91 @@
 @startuml
 skinparam classAttributeIconSize 0
 
-package "server" {
-  class FastAPIApp {
-    +lifespan()
-  }
-  class Dependencies {
-    +get_auth_service()
-    +get_current_user()
-    +get_admin_user()
-    +rate_limit()
-  }
-  class CalculationRequest
-  class ServerMapper {
-    +calculation_request_to_input()
-  }
-}
-
 package "auth" {
+  class AuthenticatedUser {
+    +id
+    +username
+    +role: UserRole | str
+    +is_admin: bool
+  }
+
+  enum UserRole {
+    USER
+    ADMIN
+  }
+
   class AuthService {
-    +ensure_default_admin()
     +login()
     +create_user()
     +change_password()
     +change_user_role()
   }
-  class SessionManager {
-    -_lock: RLock
-    +cleanup()
-    -_cleanup_unsafe()
-    +create_session()
-    +get_user()
-    +revoke()
-  }
-}
 
-package "calculation" {
-  class CalculationInput
-  class CalculationResult
-  class CalculationOrchestrator {
-    +run_full_calculation()
+  interface IUserRepository {
+    +get_by_username()
+    +get_by_id()
+    +create_user()
+    +update_password()
+    +update_role()
   }
-  class MathCore {
-    +calc_tes_efficiency()
-    +calc_block_efficiency()
-  }
-  class Constants
+
+  class SessionManager
 }
 
 package "audit" {
   class AuditEvent {
-    +remote_sent
+    +event_time
+    +event_name
+    +component
+    +subject
+    +headers
+    +event_type
+    +event_id
+    +sequence_number
+    +remote_queued
     +to_dict()
   }
+
+  interface AuditSink {
+    +write(event)
+  }
+
+  class SQLiteAuditSink
+  class RemoteQueueAuditSink
+  class FileAuditSink
   class AuditLogger {
-    +get_audit_logger()
+    +build_audit_event()
+    +get_audit_sinks()
     +audit_event()
   }
 }
 
 package "client" {
-  class MainWindow
+  class MainWindow {
+    +_do_logout()
+    +_do_logout_and_close()
+    +closeEvent()
+  }
   class ApiClient
 }
 
-FastAPIApp --> Dependencies
-Dependencies ..> AuthService : DI
+package "calculation" {
+  class CalculationInput
+  class CalculationResult
+  class CalculationOrchestrator
+  class MathCore
+}
+
+AuthenticatedUser --> UserRole
+AuthService --> IUserRepository
+AuthService --> SessionManager
+AuditSink <|.. SQLiteAuditSink
+AuditSink <|.. RemoteQueueAuditSink
+AuditSink <|.. FileAuditSink
+AuditLogger --> AuditEvent
+AuditLogger --> AuditSink
 MainWindow --> ApiClient
-ApiClient --> FastAPIApp : HTTP(S)
-CalculationRequest --> ServerMapper
-ServerMapper --> CalculationInput
 CalculationOrchestrator --> MathCore
-MathCore --> Constants
 MathCore ..> CalculationInput
 MathCore ..> CalculationResult
-AuthService --> SessionManager
-AuditLogger --> AuditEvent : replace(remote_sent)
 @enduml
