@@ -16,3 +16,5 @@
 PYTHONPATH=. pytest -q
 # 46 passed
 ```
+
+| Низкий | `app/audit/logger.py` | `get_audit_sinks()` переведен с жесткой конфигурации на реестр sink-классов через декоратор `@register_audit_sink(order=...)`. |

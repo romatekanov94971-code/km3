@@ -20,6 +20,26 @@ class AuditSink(Protocol):
         ...
 
 
+_AUDIT_SINK_REGISTRY: list[tuple[int, type[object]]] = []
+
+
+def register_audit_sink(*, order: int) -> callable:
+    """Регистрирует sink-класс аудита в общей цепочке обработки.
+
+    Это снимает жесткую конфигурацию с `get_audit_sinks()`: для добавления нового
+    канала достаточно объявить класс и пометить его декоратором
+    `@register_audit_sink(order=...)`.
+    """
+
+    def decorator(cls: type[object]) -> type[object]:
+        _AUDIT_SINK_REGISTRY.append((order, cls))
+        _AUDIT_SINK_REGISTRY.sort(key=lambda item: item[0])
+        return cls
+
+    return decorator
+
+
+@register_audit_sink(order=10)
 class SQLiteAuditSink:
     """Сохраняет событие в SQLite и добавляет sequence_number."""
 
@@ -44,6 +64,7 @@ class SQLiteAuditSink:
         return replace(event, sequence_number=sequence_number)
 
 
+@register_audit_sink(order=20)
 class RemoteQueueAuditSink:
     """Ставит событие в неблокирующую очередь удаленной отправки."""
 
@@ -54,6 +75,7 @@ class RemoteQueueAuditSink:
         return replace(event, remote_queued=remote_queued)
 
 
+@register_audit_sink(order=30)
 class FileAuditSink:
     """Пишет финальный AuditEvent в файловый журнал с ротацией."""
 
@@ -105,8 +127,8 @@ def get_audit_logger() -> logging.Logger:
 
 
 def get_audit_sinks() -> tuple[AuditSink, ...]:
-    """Порядок важен: сначала SQLite для sequence_number, потом remote queue, затем файл."""
-    return (SQLiteAuditSink(), RemoteQueueAuditSink(), FileAuditSink())
+    """Создает sink-объекты из реестра, а не из захардкоженного списка."""
+    return tuple(cls() for _, cls in _AUDIT_SINK_REGISTRY)
 
 
 def build_audit_event(
@@ -174,4 +196,5 @@ __all__ = [
     "build_audit_event",
     "get_audit_logger",
     "get_audit_sinks",
+    "register_audit_sink",
 ]

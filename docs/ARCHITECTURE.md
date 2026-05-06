@@ -83,3 +83,5 @@
 - `AuditEvent` содержит `remote_queued`, но не содержит устаревшее поле `remote_sent`.
 - GUI logout вынесен в отдельный метод и вызывается явно из пункта меню.
 - `AuthService` принимает `IUserRepository`, что снижает зависимость от конкретного класса `UserRepository`.
+
+- Реестр sink-классов аудита расширяется через декоратор `@register_audit_sink(order=...)` без изменения `get_audit_sinks()`.

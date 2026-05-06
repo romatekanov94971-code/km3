@@ -50,11 +50,17 @@ package "audit" {
     +write(event)
   }
 
+  class AuditSinkRegistry {
+    +register_audit_sink(order)
+    +_AUDIT_SINK_REGISTRY
+  }
+
   class SQLiteAuditSink
   class RemoteQueueAuditSink
   class FileAuditSink
   class AuditLogger {
     +build_audit_event()
+    +register_audit_sink()
     +get_audit_sinks()
     +audit_event()
   }
@@ -84,6 +90,8 @@ AuditSink <|.. RemoteQueueAuditSink
 AuditSink <|.. FileAuditSink
 AuditLogger --> AuditEvent
 AuditLogger --> AuditSink
+AuditLogger --> AuditSinkRegistry
+AuditSinkRegistry --> AuditSink
 MainWindow --> ApiClient
 CalculationOrchestrator --> MathCore
 MathCore ..> CalculationInput

@@ -274,3 +274,5 @@ docs/presentation/         # архитектура в PPTX
 - для `AuthService` добавлен протокол `IUserRepository`, чтобы снизить привязку к конкретному SQLite-репозиторию.
 
 Проверка: `46 passed`.
+
+- `get_audit_sinks()` больше не содержит жестко захардкоженный список; sink-классы регистрируются через декоратор `@register_audit_sink(order=...)`.

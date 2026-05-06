@@ -29,6 +29,8 @@ package "Auth" {
 
 package "Audit" {
   [AuditEvent] as AuditEvent
+  [Audit Sink Registry
+@register_audit_sink] as AuditRegistry
   [SQLiteAuditSink] as SQLiteSink
   [RemoteQueueAuditSink] as RemoteSink
   [FileAuditSink] as FileSink
@@ -60,8 +62,11 @@ IUserRepo <|.. UserRepo
 AuthService --> SessionManager
 AuthService --> UserRole
 
-CalcRoutes --> SQLiteSink
-AuthRoutes --> SQLiteSink
+CalcRoutes --> AuditRegistry
+AuthRoutes --> AuditRegistry
+AuditRegistry --> SQLiteSink
+AuditRegistry --> RemoteSink
+AuditRegistry --> FileSink
 SQLiteSink --> AuditEvent
 SQLiteSink --> DB
 RemoteSink --> RemoteQueue

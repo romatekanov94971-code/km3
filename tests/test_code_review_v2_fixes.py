@@ -45,3 +45,13 @@ def test_auth_service_depends_on_repository_protocol():
     assert "IUserRepository" in source
     assert "users: IUserRepository | None" in source
     assert "class IUserRepository" in interface_source
+
+
+def test_audit_sinks_use_registry_decorator_not_hardcoded_tuple():
+    source = Path("app/audit/logger.py").read_text(encoding="utf-8")
+    assert "_AUDIT_SINK_REGISTRY" in source
+    assert "def register_audit_sink" in source
+    assert "@register_audit_sink(order=10)" in source
+    assert "@register_audit_sink(order=20)" in source
+    assert "@register_audit_sink(order=30)" in source
+    assert "return tuple(cls() for _, cls in _AUDIT_SINK_REGISTRY)" in source
