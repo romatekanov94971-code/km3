@@ -2,13 +2,19 @@ from __future__ import annotations
 
 from PyQt6.QtGui import QAction, QCloseEvent
 from PyQt6.QtWidgets import (
+    QComboBox,
     QDoubleSpinBox,
     QFormLayout,
+    QGridLayout,
+    QGroupBox,
     QHBoxLayout,
+    QLabel,
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSpinBox,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -18,6 +24,7 @@ from app.client.charts_window import ChartsWindow
 from app.client.change_password_window import ChangePasswordWindow
 from app.client.change_role_window import ChangeRoleWindow
 from app.client.create_user_window import CreateUserWindow
+from app.client.history_window import HistoryWindow
 from app.client.results_window import ResultsWindow
 from app.client.security_settings_window import SecuritySettingsWindow
 
@@ -29,8 +36,8 @@ class MainWindow(QMainWindow):
         self.last_result: dict | None = None
         self._logout_sent = False
         role_label = "Администратор" if self.api.is_admin else "Пользователь"
-        self.setWindowTitle(f"Эффективность энергооборудования ТЭС — {role_label}: {self.api.username}")
-        self.resize(760, 460)
+        self.setWindowTitle(f"Energy System — {role_label}: {self.api.username}")
+        self.resize(980, 680)
         self._setup_menu()
 
         self.total_load = self._double(400, 1, 10000)
@@ -45,40 +52,101 @@ class MainWindow(QMainWindow):
         self.wind_dir = self._double(90, 0, 360)
         self.own_needs = self._double(0.05, 0, 0.49, decimals=4, step=0.01)
         self.beta = self._double(0.4, 0, 2, decimals=3, step=0.05)
+        self.condenser_vacuum = self._double(88, 70, 95, decimals=1, step=1)
+        self.operation_mode = QComboBox()
+        self.operation_mode.addItem("Авто", "auto")
+        self.operation_mode.addItem("Зимний режим", "winter")
+        self.operation_mode.addItem("Летний режим", "summer")
 
-        form = QFormLayout()
-        form.addRow("Общая нагрузка ТЭС, МВт", self.total_load)
-        form.addRow("Количество работающих блоков", self.num_blocks)
-        form.addRow("Номинальная мощность блока, МВт", self.nominal_power)
-        form.addRow("Номинальный КПД блока", self.nominal_efficiency)
-        form.addRow("Температура наружного воздуха, °C", self.temp_c)
-        form.addRow("Влажность, %", self.humidity)
-        form.addRow("Скорость ветра, м/с", self.wind_speed)
-        form.addRow("Направление ветра, градусы", self.wind_dir)
-        form.addRow("Коэффициент собственных нужд", self.own_needs)
-        form.addRow("Коэффициент beta", self.beta)
+        central = QWidget()
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(12)
 
-        run_button = QPushButton("Рассчитать")
-        run_button.clicked.connect(self.run_calculation)
-        charts_button = QPushButton("График")
-        charts_button.clicked.connect(self.show_charts)
-        csv_button = QPushButton("Экспорт CSV")
-        csv_button.clicked.connect(self.export_csv)
-        pptx_button = QPushButton("Экспорт PPTX")
-        pptx_button.clicked.connect(self.export_pptx)
+        title = QLabel("Расчет эффективности энергооборудования ТЭС")
+        title.setProperty("role", "title")
+        subtitle = QLabel(
+            "Введите параметры режима работы. После расчета доступны результаты, графики с аудитом точек, история и экспорт."
+        )
+        subtitle.setProperty("role", "subtitle")
+        subtitle.setWordWrap(True)
+        main_layout.addWidget(title)
+        main_layout.addWidget(subtitle)
+
+        grid = QGridLayout()
+        grid.setSpacing(12)
+        grid.addWidget(self._equipment_group(), 0, 0)
+        grid.addWidget(self._environment_group(), 0, 1)
+        grid.addWidget(self._settings_group(), 1, 0, 1, 2)
+        main_layout.addLayout(grid)
 
         buttons = QHBoxLayout()
-        buttons.addWidget(run_button)
-        buttons.addWidget(charts_button)
-        buttons.addWidget(csv_button)
-        buttons.addWidget(pptx_button)
+        self.run_button = QPushButton("Рассчитать")
+        self.run_button.setObjectName("primaryButton")
+        self.run_button.clicked.connect(self.run_calculation)
 
-        root = QWidget()
-        layout = QFormLayout()
-        layout.addRow(form)
-        layout.addRow(buttons)
-        root.setLayout(layout)
-        self.setCentralWidget(root)
+        self.charts_button = QPushButton("Графики + аудит расчета")
+        self.charts_button.setObjectName("successButton")
+        self.charts_button.clicked.connect(self.show_charts)
+
+        self.csv_button = QPushButton("Экспорт CSV")
+        self.csv_button.clicked.connect(self.export_csv)
+
+        self.pptx_button = QPushButton("Экспорт PPTX")
+        self.pptx_button.clicked.connect(self.export_pptx)
+
+        self.history_button = QPushButton("История")
+        self.history_button.clicked.connect(self.show_history)
+
+        for button in [self.run_button, self.charts_button, self.csv_button, self.pptx_button, self.history_button]:
+            buttons.addWidget(button)
+        main_layout.addLayout(buttons)
+
+        self.summary = QLabel("Расчет еще не выполнен.")
+        self.summary.setProperty("role", "subtitle")
+        self.summary.setWordWrap(True)
+        self.summary.setStyleSheet("padding: 9px; border: 1px solid #dbe4ef; border-radius: 8px; background: #ffffff;")
+        main_layout.addWidget(self.summary)
+
+        central.setLayout(main_layout)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(central)
+        self.setCentralWidget(scroll)
+        self.statusBar().showMessage("Готово к расчету")
+
+    def _equipment_group(self) -> QGroupBox:
+        group = QGroupBox("Нагрузка и оборудование")
+        form = QFormLayout()
+        form.setSpacing(8)
+        form.addRow("Общая нагрузка ТЭС, МВт", self.total_load)
+        form.addRow("Количество блоков", self.num_blocks)
+        form.addRow("Номинальная мощность блока, МВт", self.nominal_power)
+        form.addRow("Номинальный КПД блока", self.nominal_efficiency)
+        group.setLayout(form)
+        return group
+
+    def _environment_group(self) -> QGroupBox:
+        group = QGroupBox("Внешние условия")
+        form = QFormLayout()
+        form.setSpacing(8)
+        form.addRow("Температура, °C", self.temp_c)
+        form.addRow("Влажность, %", self.humidity)
+        form.addRow("Скорость ветра, м/с", self.wind_speed)
+        form.addRow("Направление ветра, °", self.wind_dir)
+        form.addRow("Режим работы", self.operation_mode)
+        group.setLayout(form)
+        return group
+
+    def _settings_group(self) -> QGroupBox:
+        group = QGroupBox("Дополнительные параметры и оптимизация")
+        form = QFormLayout()
+        form.setSpacing(8)
+        form.addRow("Коэффициент собственных нужд", self.own_needs)
+        form.addRow("Коэффициент beta", self.beta)
+        form.addRow("Разрежение в конденсаторе, кПа", self.condenser_vacuum)
+        group.setLayout(form)
+        return group
 
     def _setup_menu(self) -> None:
         account_menu = self.menuBar().addMenu("Аккаунт")
@@ -176,14 +244,40 @@ class MainWindow(QMainWindow):
             "wind_dir": self.wind_dir.value(),
             "own_needs_coeff": self.own_needs.value(),
             "beta": self.beta.value(),
+            "condenser_vacuum_kpa": self.condenser_vacuum.value(),
+            "operation_mode": self.operation_mode.currentData(),
         }
+
+    def _update_summary(self) -> None:
+        if not self.last_result:
+            self.summary.setText("Расчет еще не выполнен.")
+            return
+        main = self.last_result.get("main_result", {})
+        optimal_blocks = self.last_result.get("optimal_blocks", {})
+        vacuum = self.last_result.get("condenser_vacuum_optimization", {})
+        self.summary.setText(
+            f"Последний расчет: КПД нетто {main.get('efficiency_netto', 0) * 100:.2f}%, "
+            f"удельный расход {main.get('fuel_consumption', 0):.2f}, "
+            f"оптимальные блоки: {optimal_blocks.get('blocks', '-')}, "
+            f"оптимальное разрежение: {vacuum.get('best_vacuum_kpa', 0):.1f} кПа."
+        )
 
     def run_calculation(self) -> None:
         try:
+            self.statusBar().showMessage("Выполняется расчет...")
             self.last_result = self.api.run_calculation(self.payload())
+            self._update_summary()
+            self.statusBar().showMessage("Расчет выполнен")
             ResultsWindow(self.last_result).exec()
         except Exception as exc:
+            self.statusBar().showMessage("Ошибка расчета")
             QMessageBox.critical(self, "Ошибка расчета", str(exc))
+
+    def show_history(self) -> None:
+        try:
+            HistoryWindow(self.api).exec()
+        except Exception as exc:
+            QMessageBox.critical(self, "Ошибка истории", str(exc))
 
     def show_charts(self) -> None:
         if not self.last_result:
@@ -216,3 +310,6 @@ class MainWindow(QMainWindow):
             )
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка экспорта", str(exc))
+
+
+__all__ = ["MainWindow"]

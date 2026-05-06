@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from PyQt6.QtWidgets import QDialog, QMessageBox, QPushButton, QTextEdit, QVBoxLayout
+from PyQt6.QtWidgets import QDialog, QLabel, QMessageBox, QPushButton, QTextEdit, QVBoxLayout
 
 from app.client.api_client import ApiClient
 
@@ -14,15 +14,25 @@ class SecuritySettingsWindow(QDialog):
         super().__init__()
         self.api = api
         self.setWindowTitle("Политика безопасности и аутентификации")
-        self.resize(680, 460)
+        self.resize(760, 560)
+
+        title = QLabel("Политика безопасности")
+        title.setProperty("role", "title")
+        subtitle = QLabel("Текущие параметры аутентификации, аудита и ограничений API.")
+        subtitle.setProperty("role", "subtitle")
+        subtitle.setWordWrap(True)
 
         self.text = QTextEdit()
         self.text.setReadOnly(True)
 
         self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.setObjectName("primaryButton")
         self.refresh_button.clicked.connect(self.load_policy)
 
         layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
         layout.addWidget(self.text)
         layout.addWidget(self.refresh_button)
         self.setLayout(layout)
@@ -46,3 +56,6 @@ class SecuritySettingsWindow(QDialog):
             )
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка", str(exc))
+
+
+__all__ = ["SecuritySettingsWindow"]

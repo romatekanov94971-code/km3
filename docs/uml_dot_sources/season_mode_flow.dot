@@ -1,0 +1,28 @@
+digraph season_mode_flow {
+	graph [nodesep=0.55 pad=0.2 rankdir=LR ranksep=0.75]
+	node [color=gray30 fillcolor=white fontname=Arial fontsize=12 shape=box style="rounded,filled"]
+	edge [fontname=Arial fontsize=10]
+	gui [label="GUI
+Режим работы:
+auto / winter / summer"]
+	api [label="API
+CalculationRequest.operation_mode"]
+	input [label="CalculationInput
+operation_mode"]
+	resolve [label="resolve_operation_mode()
+AUTO: temp < 5°C -> winter
+иначе -> summer"]
+	season [label="Seasonal corrections
+heat_removal_factor
+own_needs_coeff"]
+	core [label="calc_tes_efficiency()"]
+	result [label="CalculationResult
+operation_mode
+КПД / расход топлива"]
+	gui -> api [label=payload]
+	api -> input [label=mapper]
+	input -> resolve
+	resolve -> season
+	season -> core
+	core -> result
+}

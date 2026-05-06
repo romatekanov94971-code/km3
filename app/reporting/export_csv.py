@@ -16,6 +16,7 @@ def export_full_result_to_csv(result: FullCalculationResult, directory: str | Pa
         writer = csv.writer(f, delimiter=";")
         writer.writerow(["Раздел", "Показатель", "Значение"])
         main = result.main_result
+        writer.writerow(["Основной расчет", "Режим работы", main.operation_mode])
         writer.writerow(["Основной расчет", "Нагрузка на энергоблок, МВт", round(main.load_per_block, 3)])
         writer.writerow(["Основной расчет", "КПД блока, %", round(main.block_efficiency * 100, 3)])
         writer.writerow(["Основной расчет", "КПД ТЭС брутто, %", round(main.efficiency_brutto * 100, 3)])

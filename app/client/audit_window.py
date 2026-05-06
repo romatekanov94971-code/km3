@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
     QDialog,
     QHBoxLayout,
     QLabel,
@@ -16,6 +17,7 @@ from PyQt6.QtWidgets import (
 )
 
 from app.client.api_client import ApiClient
+from app.client.style import polish_table
 
 
 class AuditWindow(QDialog):
@@ -28,16 +30,18 @@ class AuditWindow(QDialog):
         self.api = api
         self.events: list[dict] = []
         self.setWindowTitle("Журнал аудита")
-        self.resize(980, 620)
+        self.resize(1080, 700)
 
         self.limit = QSpinBox()
         self.limit.setRange(1, 1000)
         self.limit.setValue(100)
 
         self.refresh_button = QPushButton("Обновить")
+        self.refresh_button.setObjectName("primaryButton")
         self.refresh_button.clicked.connect(self.load_events)
 
         self.cleanup_button = QPushButton("Очистить старые")
+        self.cleanup_button.setObjectName("warningButton")
         self.cleanup_button.clicked.connect(self.cleanup_old_events)
 
         top = QHBoxLayout()
@@ -49,16 +53,28 @@ class AuditWindow(QDialog):
 
         self.table = QTableWidget(0, len(self.HEADERS))
         self.table.setHorizontalHeaderLabels(self.HEADERS)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.itemSelectionChanged.connect(self.show_selected_details)
+        polish_table(self.table)
 
         self.details = QTextEdit()
         self.details.setReadOnly(True)
         self.details.setPlaceholderText("Выберите событие, чтобы посмотреть служебные заголовки и детали.")
 
         layout = QVBoxLayout()
+        title = QLabel("Журнал аудита")
+        title.setProperty("role", "title")
+        subtitle = QLabel("События входа, API-запросов, расчетов, экспорта и административных действий.")
+        subtitle.setProperty("role", "subtitle")
+        subtitle.setWordWrap(True)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
         layout.addLayout(top)
         layout.addWidget(self.table, stretch=3)
-        layout.addWidget(QLabel("Детали события"))
+        details_label = QLabel("Детали события")
+        details_label.setProperty("role", "section")
+        layout.addWidget(details_label)
         layout.addWidget(self.details, stretch=2)
         self.setLayout(layout)
 
@@ -85,6 +101,8 @@ class AuditWindow(QDialog):
                 self.table.setItem(row, col, QTableWidgetItem(str(value)))
         self.table.resizeColumnsToContents()
         self.details.clear()
+        if self.events:
+            self.table.selectRow(0)
 
     def show_selected_details(self) -> None:
         indexes = self.table.selectionModel().selectedRows()
@@ -111,3 +129,6 @@ class AuditWindow(QDialog):
             self.load_events()
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка очистки аудита", str(exc))
+
+
+__all__ = ["AuditWindow"]

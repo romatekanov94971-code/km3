@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from app.calculation.core import calc_tes_efficiency
+from app.calculation.core import calc_tes_efficiency, resolve_operation_mode, seasonal_heat_removal_factor
 from app.calculation.formulas import condenser_vacuum_correction, heat_removal_factor
+from app.calculation.trace import condenser_vacuum_trace, load_distribution_trace, temperature_point_trace
 from app.common.schemas import (
     CalculationInput,
     CondenserVacuumOptimizationResult,
@@ -27,14 +28,16 @@ def analyze_temperature(
     for temp_c in range(temp_min, temp_max + 1, step):
         current = replace(data, temp_c=float(temp_c))
         result = calc_tes_efficiency(current)
+        heat_factor = heat_removal_factor(float(temp_c), data.humidity, data.wind_speed, data.wind_dir) * seasonal_heat_removal_factor(
+            resolve_operation_mode(float(temp_c), data.operation_mode)
+        )
         points.append(
             TemperatureAnalysisPoint(
                 temp_c=float(temp_c),
-                heat_removal_factor=heat_removal_factor(
-                    float(temp_c), data.humidity, data.wind_speed, data.wind_dir
-                ),
+                heat_removal_factor=heat_factor,
                 efficiency_netto_percent=result.efficiency_netto * 100,
                 fuel_consumption=result.fuel_consumption,
+                calculation_trace=temperature_point_trace(current, result, heat_factor),
             )
         )
     return points
@@ -58,6 +61,7 @@ def analyze_load_distribution(data: CalculationInput, max_blocks: int = 8) -> li
                 load_percent=result.load_per_block / data.nominal_power_per_block * 100,
                 efficiency_netto_percent=result.efficiency_netto * 100,
                 fuel_consumption=result.fuel_consumption,
+                calculation_trace=load_distribution_trace(current, result),
             )
         )
     return points
@@ -94,6 +98,7 @@ def optimize_condenser_vacuum(
                 block_efficiency_percent=result.block_efficiency * 100,
                 efficiency_netto_percent=result.efficiency_netto * 100,
                 fuel_consumption=result.fuel_consumption,
+                calculation_trace=condenser_vacuum_trace(current, result),
             )
         )
     best = max(points, key=lambda point: point.efficiency_netto_percent)

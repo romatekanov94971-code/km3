@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QComboBox, QDialog, QFormLayout, QLineEdit, QMessageBox, QPushButton, QVBoxLayout
+from PyQt6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QVBoxLayout
 
 from app.client.api_client import ApiClient
 
@@ -12,20 +12,32 @@ class ChangeRoleWindow(QDialog):
         super().__init__()
         self.api = api
         self.setWindowTitle("Изменение роли пользователя")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(460)
+
+        title = QLabel("Изменение роли")
+        title.setProperty("role", "title")
+        subtitle = QLabel("Назначение роли фиксируется в журнале аудита.")
+        subtitle.setProperty("role", "subtitle")
+        subtitle.setWordWrap(True)
 
         self.username = QLineEdit()
+        self.username.setPlaceholderText("Логин пользователя")
         self.role = QComboBox()
         self.role.addItems(["user", "admin"])
 
         form = QFormLayout()
+        form.setSpacing(10)
         form.addRow("Логин пользователя", self.username)
         form.addRow("Новая роль", self.role)
 
         self.change_button = QPushButton("Изменить роль")
+        self.change_button.setObjectName("primaryButton")
         self.change_button.clicked.connect(self.change_role)
 
         layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
         layout.addLayout(form)
         layout.addWidget(self.change_button)
         self.setLayout(layout)
@@ -46,3 +58,6 @@ class ChangeRoleWindow(QDialog):
             self.accept()
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка изменения роли", str(exc))
+
+
+__all__ = ["ChangeRoleWindow"]

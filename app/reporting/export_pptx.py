@@ -26,10 +26,11 @@ def export_full_result_to_pptx(result: FullCalculationResult, directory: str | P
 
     slide = prs.slides.add_slide(prs.slide_layouts[5])
     slide.shapes.title.text = "Основные выходные показатели"
-    rows = 7
+    rows = 8
     cols = 2
     table = slide.shapes.add_table(rows, cols, Inches(0.7), Inches(1.3), Inches(8.8), Inches(3.8)).table
     data = [
+        ("Режим работы", result.main_result.operation_mode),
         ("Нагрузка на энергоблок, МВт", result.main_result.load_per_block),
         ("КПД блока, %", result.main_result.block_efficiency * 100),
         ("КПД ТЭС брутто, %", result.main_result.efficiency_brutto * 100),
@@ -40,6 +41,9 @@ def export_full_result_to_pptx(result: FullCalculationResult, directory: str | P
     ]
     for i, (name, value) in enumerate(data):
         table.cell(i, 0).text = name
+        if isinstance(value, str):
+            table.cell(i, 1).text = value
+            continue
         table.cell(i, 1).text = f"{value:.3f}"
 
     slide = prs.slides.add_slide(prs.slide_layouts[5])

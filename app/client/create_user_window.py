@@ -22,13 +22,21 @@ class CreateUserWindow(QDialog):
         super().__init__()
         self.api = api
         self.setWindowTitle("Создание пользователя")
-        self.setMinimumWidth(430)
+        self.setMinimumWidth(470)
 
+        title = QLabel("Создание пользователя")
+        title.setProperty("role", "title")
         self.info = QLabel("Создайте учетную запись. По умолчанию пользователь обязан сменить первичный пароль.")
+        self.info.setProperty("role", "subtitle")
+        self.info.setWordWrap(True)
+
         self.username = QLineEdit()
+        self.username.setPlaceholderText("Например: operator")
         self.password = QLineEdit()
+        self.password.setPlaceholderText("Первичный пароль")
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
         self.repeat_password = QLineEdit()
+        self.repeat_password.setPlaceholderText("Повторите пароль")
         self.repeat_password.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.role = QComboBox()
@@ -38,16 +46,20 @@ class CreateUserWindow(QDialog):
         self.must_change_password.setChecked(True)
 
         form = QFormLayout()
+        form.setSpacing(10)
         form.addRow("Логин", self.username)
         form.addRow("Пароль", self.password)
         form.addRow("Повтор пароля", self.repeat_password)
         form.addRow("Роль", self.role)
         form.addRow("", self.must_change_password)
 
-        self.create_button = QPushButton("Создать")
+        self.create_button = QPushButton("Создать пользователя")
+        self.create_button.setObjectName("primaryButton")
         self.create_button.clicked.connect(self.create_user)
 
         layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.addWidget(title)
         layout.addWidget(self.info)
         layout.addLayout(form)
         layout.addWidget(self.create_button)
@@ -81,3 +93,6 @@ class CreateUserWindow(QDialog):
             self.accept()
         except Exception as exc:
             QMessageBox.critical(self, "Ошибка создания пользователя", str(exc))
+
+
+__all__ = ["CreateUserWindow"]

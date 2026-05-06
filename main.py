@@ -47,8 +47,10 @@ def run_gui() -> None:
     from app.client.api_client import ApiClient
     from app.client.login_window import LoginWindow
     from app.client.main_window import MainWindow
+    from app.client.style import apply_app_style
 
     app = QApplication(sys.argv)
+    apply_app_style(app)
     from app.server.config import get_settings
 
     api = ApiClient(get_settings().api_client_base_url)

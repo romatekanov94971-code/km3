@@ -14,45 +14,59 @@ from app.client.api_client import ApiClient
 
 
 class ChangePasswordWindow(QDialog):
-    """Окно смены пароля пользователя.
-
-    Используется и при первичной аутентификации, и из меню главного окна.
-    """
+    """Окно смены пароля пользователя."""
 
     def __init__(self, api: ApiClient, old_password_hint: str = "", forced: bool = False) -> None:
         super().__init__()
         self.api = api
         self.forced = forced
         self.setWindowTitle("Смена пароля")
-        self.setMinimumWidth(420)
+        self.setMinimumWidth(460)
 
+        title = QLabel("Смена пароля")
+        title.setProperty("role", "title")
         hint_text = (
             "Необходимо сменить пароль после первичной аутентификации."
             if forced
             else "Введите старый пароль и новый пароль."
         )
         self.status = QLabel(hint_text)
+        self.status.setProperty("role", "subtitle")
+        self.status.setWordWrap(True)
 
         self.old_password = QLineEdit(old_password_hint)
+        self.old_password.setPlaceholderText("Старый пароль")
         self.old_password.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.new_password = QLineEdit()
+        self.new_password.setPlaceholderText("Новый пароль")
         self.new_password.setEchoMode(QLineEdit.EchoMode.Password)
 
         self.repeat_password = QLineEdit()
+        self.repeat_password.setPlaceholderText("Повторите новый пароль")
         self.repeat_password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.repeat_password.returnPressed.connect(self._change_password)
 
         form = QFormLayout()
+        form.setSpacing(10)
         form.addRow("Старый пароль", self.old_password)
         form.addRow("Новый пароль", self.new_password)
         form.addRow("Повтор нового пароля", self.repeat_password)
 
+        policy = QLabel("Пароль должен содержать верхний и нижний регистр, цифру и разрешенный спецсимвол.")
+        policy.setProperty("role", "subtitle")
+        policy.setWordWrap(True)
+
         self.save_button = QPushButton("Сменить пароль")
+        self.save_button.setObjectName("primaryButton")
         self.save_button.clicked.connect(self._change_password)
 
         layout = QVBoxLayout()
+        layout.setSpacing(12)
+        layout.addWidget(title)
         layout.addWidget(self.status)
         layout.addLayout(form)
+        layout.addWidget(policy)
         layout.addWidget(self.save_button)
         self.setLayout(layout)
 
@@ -88,3 +102,6 @@ class ChangePasswordWindow(QDialog):
             )
         else:
             super().closeEvent(event)
+
+
+__all__ = ["ChangePasswordWindow"]

@@ -10,6 +10,14 @@ class UserRole(str, Enum):
     ADMIN = "admin"
 
 
+class OperationMode(str, Enum):
+    """Режим работы энергообъекта."""
+
+    AUTO = "auto"
+    WINTER = "winter"
+    SUMMER = "summer"
+
+
 # Backward-compatible public alias.
 Role = UserRole
 
@@ -29,6 +37,7 @@ class CalculationInput:
     own_needs_coeff: float = 0.05
     beta: float = 0.4
     condenser_vacuum_kpa: float | None = None
+    operation_mode: OperationMode | str = OperationMode.AUTO
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -60,6 +69,7 @@ class CalculationResult:
     condenser_vacuum_factor: float = 1.0
     is_overloaded: bool = False
     warning: str | None = None
+    operation_mode: str = OperationMode.AUTO.value
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -71,6 +81,7 @@ class TemperatureAnalysisPoint:
     heat_removal_factor: float
     efficiency_netto_percent: float
     fuel_consumption: float
+    calculation_trace: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -83,6 +94,7 @@ class LoadDistributionPoint:
     load_percent: float
     efficiency_netto_percent: float
     fuel_consumption: float
+    calculation_trace: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -95,6 +107,7 @@ class CondenserVacuumPoint:
     block_efficiency_percent: float
     efficiency_netto_percent: float
     fuel_consumption: float
+    calculation_trace: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -134,4 +147,4 @@ class FullCalculationResult:
         }
 
 
-__all__ = ['CalculationInput', 'CalculationResult', 'TemperatureAnalysisPoint', 'LoadDistributionPoint', 'CondenserVacuumPoint', 'CondenserVacuumOptimizationResult', 'FullCalculationResult', 'Role', 'UserRole']
+__all__ = ['CalculationInput', 'CalculationResult', 'TemperatureAnalysisPoint', 'LoadDistributionPoint', 'CondenserVacuumPoint', 'CondenserVacuumOptimizationResult', 'FullCalculationResult', 'OperationMode', 'Role', 'UserRole']
