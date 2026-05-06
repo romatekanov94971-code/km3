@@ -1,21 +1,23 @@
 @startuml
 node "Рабочая станция пользователя" {
   artifact "PyQt6 GUI"
+  artifact "ApiClient facade\nAuth/Calc/Audit/Export clients"
 }
 
 node "Сервер приложения" {
-  artifact "FastAPI API\nport 8000"
-  artifact "AuthService через Depends"
+  artifact "FastAPI API\nport 8000\nHTTP local / HTTPS network"
+  artifact "AuthService + in-memory SessionManager"
   artifact "Math Core / Orchestrator"
   artifact "AuditLogger + AuditEvent"
+  artifact "Remote audit queue worker"
 }
 
-database "SQLite\nusers\ncalculation_history\naudit_events" as SQLite
+database "SQLite WAL\nusers\ncalculation_history\naudit_events" as SQLite
 folder "Файловая система\nlogs/\nexports/\ndata/initial_admin_credentials.txt" as Files
 cloud "Удаленный сервер\nсбора аудита" as RemoteAudit
 
-"PyQt6 GUI" --> "FastAPI API\nport 8000" : HTTP/JSON локально\nHTTPS/JSON для сети
-"FastAPI API\nport 8000" --> SQLite
-"FastAPI API\nport 8000" --> Files : audit.log, CSV/PPTX,\nпервичный пароль admin
-"AuditLogger + AuditEvent" --> RemoteAudit : optional POST JSON
+"PyQt6 GUI" --> "FastAPI API\nport 8000\nHTTP local / HTTPS network" : HTTP/JSON локально\nHTTPS/JSON для сети
+"FastAPI API\nport 8000\nHTTP local / HTTPS network" --> SQLite : SQLite API\nWAL + busy_timeout
+"FastAPI API\nport 8000\nHTTP local / HTTPS network" --> Files : audit.log, CSV/PPTX,\nпервичный пароль admin
+"Remote audit queue worker" --> RemoteAudit : optional HTTP(S) POST JSON\nENERGY_AUDIT_REMOTE_URL
 @enduml

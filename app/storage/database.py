@@ -18,6 +18,8 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
@@ -40,4 +42,4 @@ def init_db(db_path: str | Path | None = None) -> None:
         conn.executescript(migration.read_text(encoding="utf-8"))
 
 
-__all__ = ['init_db', 'session']
+__all__ = ['connect', 'get_db_path', 'init_db', 'session']

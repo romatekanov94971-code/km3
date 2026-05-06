@@ -23,7 +23,7 @@ package "Сервер FastAPI" {
 package "Аутентификация" {
   [AuthService] as AuthService
   [PasswordPolicy] as PasswordPolicy
-  [SessionManager\nRLock + _cleanup_unsafe] as SessionManager
+  [SessionManager\nRLock + in-memory] as SessionManager
   [Initial Admin\nENV or generated file] as InitialAdmin
 }
 
@@ -43,8 +43,9 @@ package "Хранение" {
 
 package "Аудит" {
   [AuditEvent] as AuditEvent
-  [AuditLogger\nlogging.getLogger cache] as AuditLogger
+  [AuditLogger\nsequence_number + queue] as AuditLogger
   [Retention / Rotation] as AuditStorage
+  [Remote Audit Queue] as RemoteQueue
   [Remote Audit Sender] as RemoteAudit
 }
 
@@ -84,5 +85,6 @@ Repos --> DB
 AuditLogger --> AuditEvent
 AuditLogger --> Repos
 AuditLogger --> AuditStorage
-AuditLogger --> RemoteAudit
+AuditLogger --> RemoteQueue
+RemoteQueue --> RemoteAudit
 @enduml

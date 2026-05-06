@@ -1,0 +1,17 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  GUI [label="PyQt6 GUI"];
+  API [label="FastAPI API\nport 8000"];
+  DB [label="SQLite WAL\nusers/history/audit", shape=cylinder, fillcolor="#ffffff"];
+  Files [label="logs/ exports/ data/", shape=folder, fillcolor="#ffffff"];
+  Queue [label="Remote audit queue\nnon-blocking"];
+  Remote [label="Remote audit collector\nENERGY_AUDIT_REMOTE_URL"];
+  GUI -> API [label="HTTP/JSON local\nHTTPS/JSON network"];
+  API -> DB [label="SQLite API\nWAL + busy_timeout"];
+  API -> Files [label="File I/O"];
+  API -> Queue [label="enqueue"];
+  Queue -> Remote [label="HTTP(S) POST JSON"];
+}

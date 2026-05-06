@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.auth.models import AuthenticatedUser
 from app.auth.service import AuthService
 from app.common.exceptions import AccountLockedError, AuthenticationError, ValidationError
+from app.common.schemas import UserRole
 from app.server.dependencies import get_admin_user, get_auth_service, get_current_user
 from app.server.config import get_settings
 
@@ -23,13 +24,13 @@ class ChangePasswordRequest(BaseModel):
 
 
 class ChangeRoleRequest(BaseModel):
-    role: str = "user"
+    role: UserRole = UserRole.USER
 
 
 class CreateUserRequest(BaseModel):
     username: str = Field(min_length=1)
     password: str = Field(min_length=1)
-    role: str = "user"
+    role: UserRole = UserRole.USER
     must_change_password: bool = True
 
 

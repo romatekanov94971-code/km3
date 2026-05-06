@@ -17,7 +17,7 @@ PYTHONPATH=. pytest -q
 Ожидаемый результат:
 
 ```text
-18 passed
+41 passed
 ```
 
 ## 3. Запуск API

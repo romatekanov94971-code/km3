@@ -3,18 +3,30 @@ from __future__ import annotations
 import re
 
 from app.common.exceptions import ValidationError
+from app.common.schemas import UserRole
 from app.server.config import get_settings
 
-_SPECIAL_RE = re.compile(r"[^A-Za-zА-Яа-яЁё0-9]")
+# Явный whitelist спецсимволов из требований ТЗ и близких к ним символов.
+# Пробелы, табуляции, emoji и произвольные unicode-символы не считаются спецсимволами.
+_SPECIAL_RE = re.compile(r"[!@#$%^&*()_+\-=\[\]{}|;:',.<>/?`~\\]")
+_WHITESPACE_RE = re.compile(r"\s")
 
 
-def validate_password(username: str, password: str, role: str = "user") -> None:
+def normalize_role(role: str | UserRole) -> UserRole:
+    return role if isinstance(role, UserRole) else UserRole(str(role))
+
+
+def validate_password(username: str, password: str, role: str | UserRole = UserRole.USER) -> None:
     """Проверка пароля по настраиваемой политике ТЗ для пользователей и администраторов."""
     settings = get_settings()
-    min_len = settings.auth_admin_min_password_length if role == "admin" else settings.auth_user_min_password_length
+    role_value = normalize_role(role)
+    min_len = settings.auth_admin_min_password_length if role_value is UserRole.ADMIN else settings.auth_user_min_password_length
 
     if len(password) < min_len:
-        raise ValidationError(f"Пароль для роли {role} должен быть не короче {min_len} символов.")
+        raise ValidationError(f"Пароль для роли {role_value.value} должен быть не короче {min_len} символов.")
+
+    if _WHITESPACE_RE.search(password):
+        raise ValidationError("Пароль не должен содержать пробельные символы.")
 
     username_lower = username.lower()
     password_lower = password.lower()
@@ -28,7 +40,7 @@ def validate_password(username: str, password: str, role: str = "user") -> None:
     if not any(ch.isdigit() for ch in password):
         raise ValidationError("Пароль должен содержать цифру.")
     if not _SPECIAL_RE.search(password):
-        raise ValidationError("Пароль должен содержать спецсимвол.")
+        raise ValidationError("Пароль должен содержать спецсимвол из разрешенного набора: !@#$%^&*()_+-=[]{}|;:',.<>/?`~\\")
 
 
-__all__ = ['validate_password']
+__all__ = ["normalize_role", "validate_password"]

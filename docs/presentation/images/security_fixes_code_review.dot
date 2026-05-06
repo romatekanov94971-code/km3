@@ -1,0 +1,16 @@
+
+digraph G {
+  graph [rankdir=LR, bgcolor="white", pad="0.2"];
+  node [shape=box, style="rounded,filled", fillcolor="#f8f8f8", fontname="DejaVu Sans", fontsize=12];
+  edge [fontname="DejaVu Sans", fontsize=9];
+  Password [label="PasswordPolicy\nexplicit special-char whitelist\nno whitespace"];
+  Logout [label="MainWindow.closeEvent()\napi.logout()"];
+  Audit [label="AuditEvent\nsequence_number"];
+  Remote [label="Remote Audit\nqueue + daemon worker"];
+  Roles [label="UserRole enum"];
+  API [label="CalculationRequest\ntemp_c ge=-60 le=60"];
+  Password -> Audit [style=dashed, label="no password logging"];
+  Logout -> Audit [label="logout event"];
+  Remote -> Audit [dir=back, label="enqueue"];
+  Roles -> API [style=dashed];
+}

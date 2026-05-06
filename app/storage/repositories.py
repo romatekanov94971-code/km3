@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.common.exceptions import RepositoryError
+from app.common.schemas import UserRole
 from app.common.utils import utcnow_iso
 from app.storage.database import session
 
@@ -54,7 +55,7 @@ class UserRepository:
         self,
         username: str,
         password_hash: str,
-        role: str = "user",
+        role: str = UserRole.USER.value,
         must_change_password: bool = True,
     ) -> UserRecord:
         now = utcnow_iso()

@@ -14,12 +14,7 @@ from app.server.config import get_settings
 
 
 def get_audit_logger() -> logging.Logger:
-    """Возвращает именованный logger без отдельного глобального singleton.
-
-    logging.getLogger(name) сам кэширует объект logger по имени. Если в тестах
-    или при смене конфигурации путь журнала меняется, старый handler закрывается
-    и заменяется новым.
-    """
+    """Возвращает именованный logger без отдельного глобального singleton."""
     settings = get_settings()
     log_path = Path(settings.audit_log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,7 +64,8 @@ def audit_event(
     details: dict[str, Any] | None = None,
     event_id: str | None = None,
 ) -> str:
-    """Регистрирует событие в файле и, если БД инициализирована, в SQLite."""
+    """Регистрирует событие в файле, SQLite и очереди удаленного аудита."""
+    from app.audit.remote import enqueue_audit_event_remote
     from app.common.utils import utcnow_iso
     from app.storage.repositories import AuditRepository
 
@@ -97,21 +93,10 @@ def audit_event(
         details=stored_details,
         detail_level=detail_level,
     )
-    data = event.to_dict()
 
+    sequence_number: int | None = None
     try:
-        from app.audit.remote import send_audit_event_remote
-
-        remote_sent = send_audit_event_remote(data)
-    except Exception:
-        remote_sent = False
-
-    event = replace(event, remote_sent=remote_sent)
-    data = event.to_dict()
-
-    get_audit_logger().info(json.dumps(data, ensure_ascii=False))
-    try:
-        AuditRepository().create(
+        sequence_number = AuditRepository().create(
             event_name=event.event_name,
             component=event.component,
             event_type=event.event_type,
@@ -124,6 +109,14 @@ def audit_event(
     except Exception:
         # В момент первичной инициализации БД таблицы могут еще отсутствовать.
         pass
+
+    event = replace(event, sequence_number=sequence_number)
+    data = event.to_dict()
+    remote_queued = enqueue_audit_event_remote(data)
+    event = replace(event, remote_queued=remote_queued)
+    data = event.to_dict()
+
+    get_audit_logger().info(json.dumps(data, ensure_ascii=False))
     return event_id
 
 

@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 import json
+import queue
+import threading
 import urllib.error
 import urllib.request
 from typing import Any
 
 from app.server.config import get_settings
 
+_REMOTE_QUEUE: queue.Queue[dict[str, Any]] = queue.Queue(maxsize=1000)
+_WORKER_STARTED = False
+_WORKER_LOCK = threading.Lock()
+
 
 def send_audit_event_remote(event: dict[str, Any]) -> bool:
-    """Опциональная отправка события аудита на удаленный сервер сбора.
+    """Синхронная отправка события на удаленный сервер сбора.
 
-    Включается переменной окружения ENERGY_AUDIT_REMOTE_URL.
-    Ошибка удаленной отправки не должна ломать основной бизнес-сценарий.
+    Используется только внутри фонового worker-а. Основной request hot path
+    вызывает enqueue_audit_event_remote() и не блокируется на сетевой timeout.
     """
     settings = get_settings()
     if not settings.audit_remote_url:
@@ -33,4 +39,39 @@ def send_audit_event_remote(event: dict[str, Any]) -> bool:
         return False
 
 
-__all__ = ['send_audit_event_remote']
+def _remote_worker() -> None:
+    while True:
+        event = _REMOTE_QUEUE.get()
+        try:
+            send_audit_event_remote(event)
+        finally:
+            _REMOTE_QUEUE.task_done()
+
+
+def _ensure_worker_started() -> None:
+    global _WORKER_STARTED
+    if _WORKER_STARTED:
+        return
+    with _WORKER_LOCK:
+        if _WORKER_STARTED:
+            return
+        thread = threading.Thread(target=_remote_worker, name="audit-remote-worker", daemon=True)
+        thread.start()
+        _WORKER_STARTED = True
+
+
+def enqueue_audit_event_remote(event: dict[str, Any]) -> bool:
+    """Ставит событие аудита в очередь удаленной отправки без блокировки API-запроса."""
+    settings = get_settings()
+    if not settings.audit_remote_url:
+        return False
+
+    _ensure_worker_started()
+    try:
+        _REMOTE_QUEUE.put_nowait(dict(event))
+        return True
+    except queue.Full:
+        return False
+
+
+__all__ = ["enqueue_audit_event_remote", "send_audit_event_remote"]

@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.common.schemas import UserRole
+
 
 @dataclass(frozen=True)
 class AuthenticatedUser:
     id: int
     username: str
-    role: str
+    role: UserRole | str
     must_change_password: bool = False
 
     @property
     def is_admin(self) -> bool:
-        return self.role == "admin"
+        return UserRole(str(self.role)) is UserRole.ADMIN
 
 
 @dataclass(frozen=True)

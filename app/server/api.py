@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import warnings
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
@@ -20,6 +21,13 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_runtime_dirs()
+    if not (settings.api_ssl_certfile and settings.api_ssl_keyfile):
+        warnings.warn(
+            "API запущен без TLS. Для сетевого развертывания задайте "
+            "ENERGY_API_SSL_CERTFILE и ENERGY_API_SSL_KEYFILE.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
     init_db()
     AuthService().ensure_default_admin()
     audit_event("api_started", "api", "system", subject="system")

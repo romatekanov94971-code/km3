@@ -1,10 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Literal
+from enum import Enum
+from typing import Any
 
 
-Role = Literal["user", "admin"]
+class UserRole(str, Enum):
+    USER = "user"
+    ADMIN = "admin"
+
+
+# Backward-compatible public alias.
+Role = UserRole
 
 
 @dataclass(frozen=True)
@@ -127,4 +134,4 @@ class FullCalculationResult:
         }
 
 
-__all__ = ['CalculationInput', 'CalculationResult', 'TemperatureAnalysisPoint', 'LoadDistributionPoint', 'CondenserVacuumPoint', 'CondenserVacuumOptimizationResult', 'FullCalculationResult', 'Role']
+__all__ = ['CalculationInput', 'CalculationResult', 'TemperatureAnalysisPoint', 'LoadDistributionPoint', 'CondenserVacuumPoint', 'CondenserVacuumOptimizationResult', 'FullCalculationResult', 'Role', 'UserRole']

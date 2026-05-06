@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QCloseEvent
 from PyQt6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
@@ -27,6 +27,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.api = api
         self.last_result: dict | None = None
+        self._logout_sent = False
         role_label = "Администратор" if self.api.is_admin else "Пользователь"
         self.setWindowTitle(f"Эффективность энергооборудования ТЭС — {role_label}: {self.api.username}")
         self.resize(760, 460)
@@ -132,6 +133,15 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Доступ запрещен", "Журнал аудита доступен только администратору.")
             return
         AuditWindow(self.api).exec()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if not self._logout_sent and self.api.token:
+            try:
+                self.api.logout()
+                self._logout_sent = True
+            except Exception as exc:
+                QMessageBox.warning(self, "Выход", f"Не удалось зарегистрировать выход на сервере: {exc}")
+        super().closeEvent(event)
 
     def change_password(self) -> None:
         ChangePasswordWindow(self.api).exec()

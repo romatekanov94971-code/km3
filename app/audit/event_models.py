@@ -23,6 +23,8 @@ class AuditEvent:
     headers: dict[str, Any] = field(default_factory=dict)
     details: dict[str, Any] = field(default_factory=dict)
     detail_level: str = "standard"
+    sequence_number: int | None = None
+    remote_queued: bool = False
     remote_sent: bool = False
 
     def to_dict(self) -> dict[str, Any]:

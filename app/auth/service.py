@@ -11,6 +11,7 @@ from app.auth.models import AuthenticatedUser, LoginResult
 from app.auth.password_policy import validate_password
 from app.auth.session_manager import session_manager
 from app.common.exceptions import AccountLockedError, AuthenticationError, RepositoryError, ValidationError
+from app.common.schemas import UserRole
 from app.common.utils import parse_iso_datetime, utcnow, utcnow_iso
 from app.storage.repositories import UserRecord, UserRepository
 from app.server.config import get_settings
@@ -63,7 +64,7 @@ class AuthService:
         """
         settings = get_settings()
         if settings.default_admin_password:
-            validate_password(settings.default_admin_username, settings.default_admin_password, "admin")
+            validate_password(settings.default_admin_username, settings.default_admin_password, UserRole.ADMIN)
             return settings.default_admin_password, "environment"
 
         credentials_path = Path(settings.initial_admin_credentials_file)
@@ -71,11 +72,11 @@ class AuthService:
             for line in credentials_path.read_text(encoding="utf-8").splitlines():
                 if line.startswith("password="):
                     password = line.split("=", 1)[1].strip()
-                    validate_password(settings.default_admin_username, password, "admin")
+                    validate_password(settings.default_admin_username, password, UserRole.ADMIN)
                     return password, str(credentials_path)
 
         password = self._generate_initial_admin_password()
-        validate_password(settings.default_admin_username, password, "admin")
+        validate_password(settings.default_admin_username, password, UserRole.ADMIN)
         credentials_path.parent.mkdir(parents=True, exist_ok=True)
         credentials_path.write_text(
             "Initial administrator credentials\n"
@@ -99,7 +100,7 @@ class AuthService:
             self.users.create_user(
                 username=username,
                 password_hash=hash_password(password),
-                role="admin",
+                role=UserRole.ADMIN.value,
                 must_change_password=True,
             )
             audit_event(
@@ -107,22 +108,24 @@ class AuthService:
                 component="auth",
                 event_type="admin_action",
                 subject="system",
-                details={"username": username, "password_source": source},
+                details={"default_admin_created": True, "password_source": source},
             )
 
-    def create_user(self, username: str, password: str, role: str = "user", must_change_password: bool = True) -> UserRecord:
-        if role not in {"user", "admin"}:
-            raise ValidationError("Роль должна быть user или admin.")
+    def create_user(self, username: str, password: str, role: str | UserRole = UserRole.USER, must_change_password: bool = True) -> UserRecord:
+        try:
+            role_value = role if isinstance(role, UserRole) else UserRole(str(role))
+        except ValueError as exc:
+            raise ValidationError("Роль должна быть user или admin.") from exc
         if self.users.get_by_username(username):
             raise ValidationError("Пользователь с таким именем уже существует.")
-        validate_password(username, password, role)
-        user = self.users.create_user(username, hash_password(password), role, must_change_password)
+        validate_password(username, password, role_value)
+        user = self.users.create_user(username, hash_password(password), role_value.value, must_change_password)
         audit_event(
             event_name="user_created",
             component="auth",
             event_type="admin_action",
             subject=username,
-            details={"role": role},
+            details={"role": role_value.value},
         )
         return user
 
@@ -182,13 +185,15 @@ class AuthService:
         return LoginResult(user=authed, session_token=token, must_change_password=user.must_change_password)
 
 
-    def change_user_role(self, username: str, new_role: str, admin_username: str) -> UserRecord:
-        if new_role not in {"user", "admin"}:
-            raise ValidationError("Роль должна быть user или admin.")
+    def change_user_role(self, username: str, new_role: str | UserRole, admin_username: str) -> UserRecord:
+        try:
+            role_value = new_role if isinstance(new_role, UserRole) else UserRole(str(new_role))
+        except ValueError as exc:
+            raise ValidationError("Роль должна быть user или admin.") from exc
         record = self.users.get_by_username(username)
         if record is None:
             raise ValidationError("Пользователь не найден.")
-        self.users.update_role(record.id, new_role)
+        self.users.update_role(record.id, role_value.value)
         updated = self.users.get_by_id(record.id)
         if updated is None:
             raise RepositoryError("Не удалось прочитать пользователя после изменения роли.")
@@ -197,7 +202,7 @@ class AuthService:
             component="auth",
             event_type="admin_action",
             subject=admin_username,
-            details={"target_username": username, "old_role": record.role, "new_role": new_role},
+            details={"target_user_id": record.id, "old_role": str(record.role), "new_role": role_value.value},
         )
         return updated
 

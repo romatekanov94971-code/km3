@@ -94,7 +94,7 @@ python main.py gui
 PYTHONPATH=. pytest -q
 ```
 
-Ожидаемый результат: `33 passed`
+Ожидаемый результат: `41 passed`
 
 ## Переменные окружения
 
@@ -239,4 +239,24 @@ docs/presentation/         # архитектура в PPTX
 - `app/auth/service.py` экспортирует только публичный `AuthService`;
 - добавлен `tests/test_remaining_issues.py`.
 
-Проверка: `33 passed`.
+Проверка: `41 passed`.
+
+
+## Исправления code review
+
+Закрыты критические и высокоприоритетные замечания из последнего ревью:
+
+- парольная политика использует явный whitelist спецсимволов и запрещает пробельные символы;
+- удаленная отправка аудита вынесена из hot path в фоновую очередь `queue.Queue` + daemon worker;
+- GUI отправляет `/auth/logout` при закрытии главного окна;
+- файловый audit log теперь содержит `sequence_number` из SQLite;
+- SQLite включается в WAL-режим и получает `busy_timeout`;
+- роли представлены enum `UserRole`;
+- `CalculationRequest.temp_c` валидируется на границе API через `Field(ge=-60, le=60)`;
+- `ApiClient` разделен на узкие клиенты `AuthApiClient`, `CalcApiClient`, `AuditApiClient`, `ExportApiClient`;
+- документация дополнена ограничением in-memory SessionManager;
+- архитектурная презентация дополнена таблицей портов и протоколов.
+
+### Ограничение SessionManager
+
+Сессии хранятся в памяти процесса. Это нормально для учебной демонстрации, но при перезапуске API пользователи должны войти повторно. Для multi-worker / production-развертывания SessionManager нужно заменить на Redis/БД-backed хранилище сессий.

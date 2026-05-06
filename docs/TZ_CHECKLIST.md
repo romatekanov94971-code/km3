@@ -111,7 +111,7 @@
 
 ```bash
 PYTHONPATH=. pytest -q
-# 33 passed
+# 41 passed
 ```
 
 
@@ -156,3 +156,19 @@ PYTHONPATH=. pytest -q
 | Хрупкая проверка `первого handler в logger.handlers` | ✅ |
 | Прямой вызов `get_auth_service()` в `lifespan` | ✅ |
 | Приватные helpers в `__all__` модуля `auth.service` | ✅ |
+
+
+## Исправления последнего code review
+
+| Замечание | Статус |
+|---|---:|
+| Явный whitelist спецсимволов пароля | ✅ |
+| Remote audit вынесен из синхронного hot path | ✅ |
+| Logout вызывается из GUI при закрытии окна | ✅ |
+| Порядковый номер события добавлен в файловый audit log как `sequence_number` | ✅ |
+| SQLite WAL + busy_timeout | ✅ |
+| Роли заменены на enum `UserRole` | ✅ |
+| `ApiClient` разделен на Auth/Calc/Audit/Export клиенты | ✅ |
+| Таблица портов и протоколов добавлена в PPTX и ARCHITECTURE.md | ✅ |
+| `temp_c` валидируется в Pydantic-схеме | ✅ |
+| Ограничение in-memory SessionManager задокументировано | ✅ |

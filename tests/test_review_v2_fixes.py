@@ -13,7 +13,8 @@ def test_session_manager_has_unsafe_cleanup_split():
 def test_audit_logger_uses_replace_and_no_global_logger():
     source = Path("app/audit/logger.py").read_text(encoding="utf-8")
     assert "from dataclasses import replace" in source
-    assert "replace(event, remote_sent=remote_sent)" in source
+    assert "replace(event, sequence_number=sequence_number)" in source
+    assert "replace(event, remote_queued=remote_queued)" in source
     assert "global _LOGGER" not in source
     assert "_LOGGER:" not in source
 

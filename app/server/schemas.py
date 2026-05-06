@@ -8,7 +8,7 @@ class CalculationRequest(BaseModel):
     num_blocks: int = Field(gt=0, description="Количество работающих блоков")
     nominal_power_per_block: float = Field(gt=0, description="Номинальная мощность блока, МВт")
     nominal_efficiency: float = Field(gt=0, lt=1, description="Номинальный КПД блока, доля")
-    temp_c: float = Field(description="Температура наружного воздуха, °C")
+    temp_c: float = Field(ge=-60, le=60, description="Температура наружного воздуха, °C")
     humidity: float = Field(ge=0, le=100, description="Влажность, %")
     wind_speed: float = Field(ge=0, description="Скорость ветра, м/с")
     wind_dir: float = Field(ge=0, le=360, description="Направление ветра, градусы")
